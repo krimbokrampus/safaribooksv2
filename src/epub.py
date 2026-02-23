@@ -5,6 +5,7 @@ import re
 import time
 from functools import reduce
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import NamedTuple
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -83,6 +84,8 @@ def get_oreilly_cookies():
 CACHE = requests.Session()
 CACHE.cookies.update(get_oreilly_cookies())
 
+
+
 format_chapter = lambda e, t, a, j: (  # noqa: E731
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xml:lang="'
     + e["language"]
@@ -109,6 +112,9 @@ class OreillyEpubParser:
         self.id, self.push_func, self.relative_stylesheets = id, push_func, []
         self.book_info_json = asyncio.run(self.get_book_json())
         self.file_list = asyncio.run(self.get_file_list())
+
+        self.out_path = Path("out/")
+        self.out_path.mkdir(exist_ok=True)
 
     def sub_script(self, html: str):
         regex = re.compile(
@@ -138,6 +144,12 @@ class OreillyEpubParser:
 
         d = PyQuery(html)
 
+        for tag in itertools.chain(d("div").find("span").items()):
+            tag.append("</span>")
+
+        for tag in itertools.chain(d("div").items()):
+            tag.append("</div>")
+
         combined_tags = itertools.chain(d("img").items(), d("image").items())
         for tag in combined_tags:
             tag_html = str(tag)
@@ -154,30 +166,7 @@ class OreillyEpubParser:
                 tag_html = tag_html.replace(">", "/>")
                 tag.replace_with(tag_html)
 
-        regex = re.compile(
-            r"(?:<(?:br|col|hr)(?!group)(?:[^>]?|[^>]+))(?<!/)>",
-            flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL),
-        )
         html = str(d.html())
-
-        matches = regex.findall(html)
-        test_var1 = None
-        test_var2 = None
-
-        for match in matches:
-            test_var1 = html
-            # span tag?
-            test_var2 = match[0]
-
-            if "div" in test_var2:
-                html = test_var1.replace(
-                    test_var2, test_var2.replace("div>", "div></div>")
-                )
-
-            if "span" in test_var2:
-                html = test_var1.replace(
-                    test_var2, test_var2.replace("span>", "span></span>")
-                )
 
         items = list(
             map(
@@ -306,7 +295,7 @@ class OreillyEpubParser:
 
     def zip_epub_contents(self, mapped_files):
         with ZipFile(
-            "out/{0}.epub".format(escape_dirname(self.book_info_json["title"])),
+            self.out_path / ("{0}.epub".format(escape_dirname(self.book_info_json["title"]))),
             "w",
             compression=ZIP_DEFLATED,
         ) as handle:
@@ -323,7 +312,7 @@ class OreillyEpubParser:
     async def get_file_contents(self):
         self.collect_stylesheets(self.book_info_json)
 
-        threads = ThreadPool(10)
+        threads = ThreadPool(3)
         threads.map(
             lambda e: self.push_func(
                 {
