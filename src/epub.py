@@ -18,7 +18,7 @@ TEST_ID_2 = 9781592538218
 BOOK_JSON_URL = "https://learning.oreilly.com/api/v2/epubs/{0}/"
 
 LIMIT_FORMATTED_URL = "{0}?limit={1}"
-FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:orm:book:{0}/files/?limit=1000&offset={1}"
+FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:orm:book:{0}/files/?limit={2}&offset={1}"
 
 SHOULD_SLEEP = False
 SLEEP_TIME = 0
@@ -73,18 +73,20 @@ def get_oreilly_cookies():
         ".oreilly.com",
         "api.oreilly.com",
     ]
+
     cookies = {}
     browser = None
+
     try:
         try:
             _ = browser_cookie3.chrome()
             browser = "chrome"
         except browser_cookie3.BrowserCookieError:
-            print("failed to locate firefox cookies")
+            print("failed to locate chrome cookies")
             _ = browser_cookie3.firefox()
             browser = "firefox"
     except browser_cookie3.BrowserCookieError:
-        print("failed to locate chrome cookies")
+        print("failed to locate firefox cookies")
         _ = browser_cookie3.chromium()
         browser = "chromium"
 
@@ -129,11 +131,12 @@ class ContentBuffer(NamedTuple):
 class OreillyEpubParser:
     def __init__(self, id, push_func):
         self.id, self.push_func, self.relative_stylesheets = id, push_func, []
-        self.book_info_json = asyncio.run(self.get_book_json())
-        self.file_list = asyncio.run(self.get_file_list())
+        self.book_info_json = self.get_book_json()
+        self.file_list = self.get_file_list()
 
         self.out_path = Path("out/")
         self.out_path.mkdir(exist_ok=True)
+        print(f"Downloading {self.id}")
 
     def sub_script(self, html: str):
         regex = re.compile(
@@ -142,7 +145,7 @@ class OreillyEpubParser:
         )
         return regex.sub("", html)
 
-    async def get_book_json(self):
+    def get_book_json(self):
         while True:
             response = requests.get(BOOK_JSON_URL.format(self.id))
 
@@ -226,7 +229,7 @@ class OreillyEpubParser:
 
         return "OEBPS/{0}".format(full_path)
 
-    async def get_file_list(self):
+    def get_file_list(self):
         file_list = self.book_info_json["files"]
 
         while True:
@@ -241,19 +244,19 @@ class OreillyEpubParser:
         file_count = out["count"]
 
         if file_count < 1000:
-            return {
-                "count": file_count,
-                "results": requests.get(
-                    FILE_LIST_LIMIT_FORMATTED_URL.format(self.book_info_json["identifier"], file_count)
-                ).json()["results"],
-            }
+            files = requests.get(
+                FILE_LIST_LIMIT_FORMATTED_URL.format(
+                    self.book_info_json["identifier"], 0, file_count
+                )
+            ).json()["results"]
+            return files
 
         files = itertools.chain.from_iterable(
             list(
                 map(
                     lambda i: requests.get(
                         FILE_LIST_LIMIT_FORMATTED_URL.format(
-                            self.book_info_json["identifier"], i
+                            self.book_info_json["identifier"], i, 1000
                         )
                     ).json()["results"],
                     list(range(0, file_count, 1000)),
@@ -261,7 +264,7 @@ class OreillyEpubParser:
             )
         )
 
-        return {"count": file_count, "results": files}
+        return files
 
     def collect_stylesheets(self, x: dict):
         response = requests.get(LIMIT_FORMATTED_URL.format(x["spine"], 2)).json()
@@ -279,6 +282,8 @@ class OreillyEpubParser:
     def handle_file(self, file: dict):
         if SHOULD_SLEEP:
             time.sleep(SLEEP_TIME)
+
+        print(file)
 
         match file["kind"]:
             case "chapter":
@@ -335,7 +340,9 @@ class OreillyEpubParser:
             )
             handle.close()
 
-    async def get_file_contents(self):
+        print(f"Finished {self.id}")
+
+    def get_file_contents(self):
         self.collect_stylesheets(self.book_info_json)
 
         threads = ThreadPool(3)
