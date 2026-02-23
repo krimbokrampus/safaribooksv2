@@ -74,8 +74,28 @@ def get_oreilly_cookies():
         "api.oreilly.com",
     ]
     cookies = {}
+    browser = None
+    try:
+        try:
+            _ = browser_cookie3.chrome()
+            browser = "chrome"
+        except browser_cookie3.BrowserCookieError:
+            print("failed to locate firefox cookies")
+            _ = browser_cookie3.firefox()
+            browser = "firefox"
+    except browser_cookie3.BrowserCookieError:
+        print("failed to locate chrome cookies")
+        _ = browser_cookie3.chromium()
+        browser = "chromium"
+
     for d in domains:
-        cj = browser_cookie3.chromium(domain_name=d)
+        match browser:
+            case "firefox":
+                cj = browser_cookie3.firefox()
+            case "chrome":
+                cj = browser_cookie3.chrome()
+            case "chromium":
+                cj = browser_cookie3.chromium()
         for c in cj:
             cookies[c.name] = c.value
     return cookies
