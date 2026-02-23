@@ -144,10 +144,10 @@ class OreillyEpubParser:
 
         d = PyQuery(html)
 
-        for tag in itertools.chain(d("div").find("span").items()):
+        for tag in itertools.chain.from_iterable(d("div").find("span").items()):
             tag.append("</span>")
 
-        for tag in itertools.chain(d("div").items()):
+        for tag in itertools.chain.from_iterable(d("div").items()):
             tag.append("</div>")
 
         combined_tags = itertools.chain(d("img").items(), d("image").items())
