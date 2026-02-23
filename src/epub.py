@@ -227,9 +227,12 @@ class OreillyEpubParser:
         file_count = out["count"]
 
         if file_count < 1000:
-            return requests.get(
-                LIMIT_FORMATTED_URL.format(file_list, file_count)
-            ).json()["results"]
+            return {
+                "count": file_count,
+                "results": requests.get(
+                    LIMIT_FORMATTED_URL.format(file_list, file_count)
+                ).json()["results"],
+            }
 
         # threads = ThreadPool()
         files = itertools.chain.from_iterable(
