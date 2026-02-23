@@ -209,8 +209,8 @@ class OreillyEpubParser:
                 return "OEBPS/{0}".format(full_path)
             case "":
                 return full_path
-            case _:
-                return "OEBPS/{0}".format(full_path)
+
+        return "OEBPS/{0}".format(full_path)
 
     async def get_file_list(self):
         file_list = self.book_info_json["files"]
@@ -298,10 +298,8 @@ class OreillyEpubParser:
                         if content.endswith("?xml version="):
                             return '<?xml version="1.0" encoding="UTF-8"?>' + content
                         return content
-                    case _:
-                        return fetch_content_buffer(file["url"])
-            case _:
-                return fetch_content_buffer(file["url"])
+
+        return fetch_content_buffer(file["url"])
 
     def zip_epub_contents(self, mapped_files):
         with ZipFile(
