@@ -151,7 +151,7 @@ class OreillyEpubParser:
                 tag.attr("href", direct_file_path_denominator + href)
 
             if ">" not in tag_html:
-                tag_html = tag_html.replace(">", " />")
+                tag_html = tag_html.replace(">", "/>")
                 tag.replace_with(tag_html)
 
         regex = re.compile(
