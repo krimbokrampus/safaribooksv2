@@ -232,7 +232,9 @@ class OreillyEpubParser:
             list(
                 map(
                     lambda i: requests.get(
-                        FILE_LIST_LIMIT_FORMATTED_URL.format(self.book_info_json["identifier"], i)
+                        FILE_LIST_LIMIT_FORMATTED_URL.format(
+                            self.book_info_json["identifier"], i
+                        )
                     ).json()["results"],
                     list(range(0, file_count, 1000)),
                 )
