@@ -7,7 +7,7 @@ This is an Oreilly Downloader based on their v2 API. It was rewritten from the m
 ## Setup
 
 ```bash
-git clone [...](https://github.com/krimbokrampus/safaribooksv2)
+git clone https://github.com/krimbokrampus/safaribooksv2
 cd safaribooksv2
 python -m venv .venv
 source .venv/bin/activate # whatever shell you have
