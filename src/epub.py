@@ -91,11 +91,11 @@ def get_oreilly_cookies():
     for d in domains:
         match browser:
             case "firefox":
-                cj = browser_cookie3.firefox()
+                cj = browser_cookie3.firefox(domain_name=d)
             case "chrome":
-                cj = browser_cookie3.chrome()
+                cj = browser_cookie3.chrome(domain_name=d)
             case "chromium":
-                cj = browser_cookie3.chromium()
+                cj = browser_cookie3.chromium(domain_name=d)
         for c in cj:
             cookies[c.name] = c.value
     return cookies
