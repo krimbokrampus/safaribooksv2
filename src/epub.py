@@ -283,8 +283,6 @@ class OreillyEpubParser:
         if SHOULD_SLEEP:
             time.sleep(SLEEP_TIME)
 
-        print(file)
-
         match file["kind"]:
             case "chapter":
                 return self.parse_and_replace_html(
