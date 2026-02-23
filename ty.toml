@@ -1,0 +1,3 @@
+[rules]
+possibly-missing-attribute = "ignore"
+unresolved-attribute = "ignore"
