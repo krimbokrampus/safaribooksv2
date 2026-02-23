@@ -194,8 +194,8 @@ class OreillyEpubParser:
                 ),
                 encoding="utf-8",
             )
-        else:
-            return bytes(html, encoding="utf-8")
+
+        return bytes(html, encoding="utf-8")
 
     @staticmethod
     def determine_relative_epub_file_path(filename, filename_ext, full_path):
