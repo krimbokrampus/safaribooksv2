@@ -244,7 +244,7 @@ class OreillyEpubParser:
             return {
                 "count": file_count,
                 "results": requests.get(
-                    LIMIT_FORMATTED_URL.format(file_list, file_count)
+                    FILE_LIST_LIMIT_FORMATTED_URL.format(self.book_info_json["identifier"], file_count)
                 ).json()["results"],
             }
 
