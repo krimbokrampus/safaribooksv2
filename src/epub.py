@@ -31,7 +31,7 @@ fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
 
-# taken from https://github.com/lorenzodifuccia/safaribooks/blob/master/safaribooks.py
+# sourced from https://github.com/lorenzodifuccia/safaribooks/blob/master/safaribooks.py
 def escape_dirname(dirname, clean_space=False):
     for ch in [
         "~",
@@ -59,7 +59,7 @@ def escape_dirname(dirname, clean_space=False):
     return dirname if not clean_space else dirname.replace(" ", "")
 
 
-# taken from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py
+# sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py
 def get_oreilly_cookies():
     domains = [
         "learning-oreilly-com.ezproxy.spl.org",
@@ -179,7 +179,7 @@ class OreillyEpubParser:
             )
         )
 
-        combined_tags = itertools.chain(d("img").items(), d("image").items())
+        combined_tags = itertools.chain(d("img").items(), d("image"))
 
         for tag in combined_tags:
             tag_html = str(tag)
