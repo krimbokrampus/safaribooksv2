@@ -85,7 +85,6 @@ CACHE = requests.Session()
 CACHE.cookies.update(get_oreilly_cookies())
 
 
-
 format_chapter = lambda e, t, a, j: (  # noqa: E731
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xml:lang="'
     + e["language"]
@@ -144,11 +143,18 @@ class OreillyEpubParser:
 
         d = PyQuery(html)
 
-        for tag in itertools.chain.from_iterable(d("div").find("span").items()):
-            tag.append("</span>")
-
-        for tag in itertools.chain.from_iterable(d("div").items()):
-            tag.append("</div>")
+        list(
+            map(
+                lambda x: x.append("</span>"),
+                itertools.chain.from_iterable(d("div").find("span").items()),
+            )
+        )
+        list(
+            map(
+                lambda x: x.append("</div>"),
+                itertools.chain.from_iterable(d("div").items()),
+            )
+        )
 
         combined_tags = itertools.chain(d("img").items(), d("image").items())
         for tag in combined_tags:
@@ -194,8 +200,6 @@ class OreillyEpubParser:
                     "com.apple.ibooks.display-options"
                 ):
                     return "META-INF/{0}".format(full_path)
-
-                return "OEBPS/{0}".format(full_path)
             case "":
                 return full_path
 
@@ -295,7 +299,10 @@ class OreillyEpubParser:
 
     def zip_epub_contents(self, mapped_files):
         with ZipFile(
-            self.out_path / ("{0}.epub".format(escape_dirname(self.book_info_json["title"]))),
+            (
+                self.out_path
+                / ("{0}.epub".format(escape_dirname(self.book_info_json["title"])))
+            ),
             "w",
             compression=ZIP_DEFLATED,
         ) as handle:
