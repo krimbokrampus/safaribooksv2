@@ -157,6 +157,7 @@ class OreillyEpubParser:
         )
 
         combined_tags = itertools.chain(d("img").items(), d("image").items())
+
         for tag in combined_tags:
             tag_html = str(tag)
             src = tag.attr("src")
@@ -227,25 +228,18 @@ class OreillyEpubParser:
                 ).json()["results"],
             }
 
-        # threads = ThreadPool()
         files = itertools.chain.from_iterable(
             list(
                 map(
-                    lambda i: self.request_file,
+                    lambda i: requests.get(
+                        FILE_LIST_LIMIT_FORMATTED_URL.format(self.book_info_json["identifier"], i)
+                    ).json()["results"],
                     list(range(0, file_count, 1000)),
                 )
             )
         )
-        # threads.close()
 
         return {"count": file_count, "results": files}
-
-    def request_file(self, x):
-        if SHOULD_SLEEP:
-            time.sleep(SLEEP_TIME)
-        return requests.get(
-            FILE_LIST_LIMIT_FORMATTED_URL.format(self.book_info_json["identifier"], x)
-        ).json()["results"]
 
     def collect_stylesheets(self, x: dict):
         response = requests.get(LIMIT_FORMATTED_URL.format(x["spine"], 2)).json()
@@ -261,6 +255,9 @@ class OreillyEpubParser:
         )
 
     def handle_file(self, file: dict):
+        if SHOULD_SLEEP:
+            time.sleep(SLEEP_TIME)
+
         match file["kind"]:
             case "chapter":
                 return self.parse_and_replace_html(
