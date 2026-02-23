@@ -30,7 +30,7 @@ fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
 
-# taken from https://github.com/lorenzodifuccia/safaribooks/blob/master/retrieve_cookies.py
+# taken from https://github.com/lorenzodifuccia/safaribooks/blob/master/safaribooks.py
 def escape_dirname(dirname, clean_space=False):
     for ch in [
         "~",
