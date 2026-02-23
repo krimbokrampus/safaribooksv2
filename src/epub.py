@@ -169,13 +169,13 @@ class OreillyEpubParser:
         list(
             map(
                 lambda x: x.append("</span>"),
-                itertools.chain.from_iterable(d("div").find("span").items()),
+                itertools.chain(d("div").find("span").items()),
             )
         )
         list(
             map(
                 lambda x: x.append("</div>"),
-                itertools.chain.from_iterable(d("div").items()),
+                itertools.chain(d("div").items()),
             )
         )
 

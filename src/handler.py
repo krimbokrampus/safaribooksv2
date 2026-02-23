@@ -40,7 +40,7 @@ def push_filelisting(x):
 def start(x):
     global i
     parser = OreillyEpubParser(x, push_filelisting)
-    asyncio.run(parser.get_file_contents())
+    parser.get_file_contents()
 
     mapped_files = map_files()
     parser.zip_epub_contents(mapped_files)
