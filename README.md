@@ -5,5 +5,8 @@ By default, it will grab your cookies using Chromium. If you don't have Chromium
 
 To use it just put the ID you want to download in the main file's func call to ```handler.start()``` or type via input.
 
+> [!WARNING] 
+> Oreilly's v2 API seems to hate when you download multiple EPUBs, so they will effectively blacklist the IP temporarily. If you get redundant chapter files in your EPUB, this is the reason. TEST_ID_2 wasn't downloading so I couldn't test the PDF/xHTML conversion. 
+
 ## **```static/out.json``` is a metadata dump of all Oreilly Books, as of 02/20/26.**
 ## **```static/filelist.json``` is an API dump of ```Machine Learning Foundation```'s filelist for when I was making the Parser.**
