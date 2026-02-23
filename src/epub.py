@@ -173,7 +173,8 @@ class OreillyEpubParser:
                 html = test_var1.replace(
                     test_var2, test_var2.replace("div>", "div></div>")
                 )
-            elif "span" in test_var2:
+
+            if "span" in test_var2:
                 html = test_var1.replace(
                     test_var2, test_var2.replace("span>", "span></span>")
                 )
@@ -303,8 +304,6 @@ class OreillyEpubParser:
                 return fetch_content_buffer(file["url"])
 
     def zip_epub_contents(self, mapped_files):
-        # example arg:
-        # (filename, filename_ext, path, bytes, compression_level)
         with ZipFile(
             "out/{0}.epub".format(escape_dirname(self.book_info_json["title"])),
             "w",
