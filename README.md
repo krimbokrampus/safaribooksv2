@@ -21,4 +21,4 @@ By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it 
 To use it just put the ID you want to download in the main file's func call to ```handler.start()``` or type via input.
 
 **```static/out.json``` is a metadata dump of all Oreilly Books, as of 02/23/26.** <br>
-**```static/filelist.json``` is an API dump of ```Machine Learning Foundation```'s filelist for when I was making the Parser.**
+**```static/filelist.json``` is an API dump of ```Handbook of International Economics```'s filelist for when I was making the Parser.**
