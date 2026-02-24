@@ -7,6 +7,10 @@ This is an Oreilly Downloader based on their v2 API. It was rewritten from the m
 ## Setup
 Requires Python >3.10
 
+> [!NOTE] 
+> These setup commands are for Linux, specifically.
+
+### Using venv
 ```bash
 git clone https://github.com/krimbokrampus/safaribooksv2
 cd safaribooksv2
@@ -14,6 +18,13 @@ python -m venv .venv
 source .venv/bin/activate # whatever shell you have
 pip install -r requirements.txt
 python main.py
+```
+
+### Using uv
+```bash
+git clone https://github.com/krimbokrampus/safaribooksv2
+cd safaribooksv2
+uv run --with requests --with pyquery --with browser_cookie3 python main.py
 ```
 
 By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it will switch to Firefox. If Firefox doesn't exist, it will fallback to Chromium.
