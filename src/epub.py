@@ -16,6 +16,14 @@ BOOK_JSON_URL = "https://learning.oreilly.com/api/v2/epubs/{0}/"
 LIMIT_FORMATTED_URL = "{0}?limit={1}"
 FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:orm:book:{0}/files/?limit={2}&offset={1}"
 
+XML_CONTAINER = {
+    "kind": "other_asset",
+    "full_path": "container.xml",
+    "filename": "container.xml",
+    "filename_ext": ".xml",
+}
+XML_CONTENTS = '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'
+
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
@@ -123,6 +131,8 @@ class OreillyEpubParser:
         self.file_list = self.get_file_list()
         self.file_contents = {}
         self.is_pdf_converted = False
+
+        self.get_file_contents()
 
         print(f"Downloading {self.id}")
 
@@ -255,23 +265,12 @@ class OreillyEpubParser:
         type = file["media_type"]
 
         if type == "application/oebps-package+xml":
-            container = {
-                "kind": "other_asset",
-                "full_path": "container.xml",
-                "filename": "container.xml",
-                "filename_ext": ".xml",
-            }
-            contents: bytes = bytes(
-                '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'.format(
-                    "OEBPS/" + file["full_path"], file["media_type"]
-                ),
-                encoding="utf-8",
-            )
-
             self.push_filelisting(
                 {
-                    "file": container,
-                    "fileContents": contents,
+                    "file": XML_CONTAINER,
+                    "fileContents": XML_CONTENTS.format(
+                        "OEBPS/" + file["full_path"], file["media_type"]
+                    ).encode(),
                 }
             )
             return fetch_text(file["url"])
@@ -347,6 +346,12 @@ class OreillyEpubParser:
 
         if self.is_pdf_converted:
             print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
+
+        self.file_list = list(
+            itertools.filterfalse(
+                lambda x: "container.xml" == x["filename"], self.file_list
+            )
+        )
 
         threads = ThreadPool(3)
         threads.map(

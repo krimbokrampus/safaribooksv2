@@ -23,6 +23,5 @@ args.add_argument(
 )
 
 parser = OreillyEpubParser(args.parse_args())
-parser.get_file_contents()
 mapped_files = parser.map_files()
 parser.zip_epub_contents(mapped_files)
