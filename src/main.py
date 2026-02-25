@@ -1,6 +1,6 @@
 import argparse
 
-import handler
+from epub import OreillyEpubParser
 
 args = argparse.ArgumentParser(
     description="Downloads EPUBs from Oreilly.", add_help=False, allow_abbrev=False
@@ -22,4 +22,7 @@ args.add_argument(
     help="Sleeps when requesting files to prevent IP from being flagged.",
 )
 
-handler.start(args.parse_args())
+parser = OreillyEpubParser(args.parse_args())
+parser.get_file_contents()
+mapped_files = parser.map_files()
+parser.zip_epub_contents(mapped_files)

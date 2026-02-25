@@ -1,6 +1,6 @@
+import code
 import html
 import itertools
-import re
 import time
 from functools import reduce
 from multiprocessing.pool import ThreadPool
@@ -18,6 +18,9 @@ FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:o
 
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
+
+OUT_PATH = Path("out/")
+OUT_PATH.mkdir(exist_ok=True)
 
 KINDLE_HTML = (
     "#sbo-rt-content *{{word-wrap:break-word!important;"
@@ -75,16 +78,18 @@ def get_oreilly_cookies():
         _ = browser_cookie3.chromium()
         browser = "chromium"
 
-    for d in domains:
+    def scrape_cookie(domain: str):
         match browser:
             case "chrome":
-                cj = browser_cookie3.chrome(domain_name=d)
+                cj = browser_cookie3.chrome(domain_name=domain)
             case "firefox":
-                cj = browser_cookie3.firefox(domain_name=d)
+                cj = browser_cookie3.firefox(domain_name=domain)
             case "chromium":
-                cj = browser_cookie3.chromium(domain_name=d)
-        for c in cj:
-            cookies[c.name] = c.value
+                cj = browser_cookie3.chromium(domain_name=domain)
+
+        list(map(lambda c: cookies.update({c.name: c.value}), cj))
+
+    list(map(scrape_cookie, domains))
     return cookies
 
 
@@ -112,19 +117,13 @@ class ContentBuffer(NamedTuple):
 
 
 class OreillyEpubParser:
-    def __init__(self, push_func, args):
-        self.id, self.push_func, self.args, self.relative_stylesheets = (
-            args.bookid,
-            push_func,
-            args,
-            [],
-        )
+    def __init__(self, args):
+        self.id, self.args, self.relative_stylesheets = args.bookid, args, []
         self.book_info_json = self.get_book_json()
         self.file_list = self.get_file_list()
+        self.file_contents = {}
         self.is_pdf_converted = False
 
-        self.out_path = Path("out/")
-        self.out_path.mkdir(exist_ok=True)
         print(f"Downloading {self.id}")
 
     def get_book_json(self):
@@ -190,13 +189,10 @@ class OreillyEpubParser:
 
         return bytes(html, encoding="utf-8")
 
-    @staticmethod
-    def determine_relative_epub_file_path(filename, filename_ext, full_path):
+    def determine_relative_epub_file_path(self, filename, filename_ext, full_path):
         match filename_ext:
             case ".xml":
-                if filename.startswith("container") or filename.startswith(
-                    "com.apple.ibooks.display-options"
-                ):
+                if filename.startswith("container"):
                     return "META-INF/{0}".format(full_path)
             case "":
                 return full_path
@@ -272,7 +268,7 @@ class OreillyEpubParser:
                 encoding="utf-8",
             )
 
-            self.push_func(
+            self.push_filelisting(
                 {
                     "file": container,
                     "fileContents": contents,
@@ -308,7 +304,7 @@ class OreillyEpubParser:
     def zip_epub_contents(self, mapped_files):
         with ZipFile(
             (
-                self.out_path
+                OUT_PATH
                 / ("{0}.epub".format(escape_dirname(self.book_info_json["title"])))
             ),
             "w",
@@ -329,7 +325,7 @@ class OreillyEpubParser:
     def push_file(self, x):
         contents = self.handle_file(x)
 
-        self.push_func(
+        self.push_filelisting(
             {
                 "file": x,
                 "fileContents": contents
@@ -359,7 +355,7 @@ class OreillyEpubParser:
         )
         threads.close()
 
-        self.push_func(
+        self.push_filelisting(
             {
                 "file": {
                     "kind": "other_asset",
@@ -370,3 +366,27 @@ class OreillyEpubParser:
                 "fileContents": bytes("application/epub+zip", encoding="utf-8"),
             }
         )
+
+    def map_files(self):
+        return list(
+            itertools.starmap(
+                lambda k, v: ContentBuffer(
+                    self.determine_relative_epub_file_path(k, v[0], v[1]),
+                    v[2],
+                    v[3]["level"],
+                ),
+                self.file_contents.items(),
+            )
+        )
+
+    def push_filelisting(self, x):
+        self.file_contents[x["file"]["filename"]] = [
+            x["file"]["filename_ext"],
+            x["file"]["full_path"],
+            x["fileContents"],
+            {
+                "level": 0
+                if "image" == x["file"]["kind"] or "mimetype" == x["file"]["full_path"]
+                else 9
+            },
+        ]
