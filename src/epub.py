@@ -1,4 +1,3 @@
-import asyncio
 import html
 import itertools
 import re
@@ -15,20 +14,21 @@ from pyquery import PyQuery
 
 TEST_ID = 9781000925968
 TEST_ID_2 = 9781592538218
+TEST_ID_3 = 9781449324957
 BOOK_JSON_URL = "https://learning.oreilly.com/api/v2/epubs/{0}/"
 
 LIMIT_FORMATTED_URL = "{0}?limit={1}"
 FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:orm:book:{0}/files/?limit={2}&offset={1}"
 
-SHOULD_SLEEP = False
-SLEEP_TIME = 0
-
-if SHOULD_SLEEP:
-    SLEEP_TIME = 5
-
-html_dec = lambda x: html.escape(x)  # noqa: E731
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
+
+KINDLE_HTML = (
+    "#sbo-rt-content *{{word-wrap:break-word!important;"
+    "word-break:break-word!important;}}#sbo-rt-content table,#sbo-rt-content pre"
+    "{{overflow-x:unset!important;overflow:unset!important;"
+    "overflow-y:unset!important;white-space:pre-wrap!important;}}"
+)
 
 
 # sourced from https://github.com/lorenzodifuccia/safaribooks/blob/master/safaribooks.py
@@ -59,20 +59,9 @@ def escape_dirname(dirname, clean_space=False):
     return dirname if not clean_space else dirname.replace(" ", "")
 
 
-# sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py
+# sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
 def get_oreilly_cookies():
-    domains = [
-        "learning-oreilly-com.ezproxy.spl.org",
-        "www-oreilly-com.ezproxy.spl.org",
-        ".ezproxy.spl.org",
-        ".spl.org",
-        ".www.spl.org",
-        "learning.oreilly.com",
-        "www.oreilly.com",
-        "oreilly.com",
-        ".oreilly.com",
-        "api.oreilly.com",
-    ]
+    domains = ["learning.oreilly.com", "www.oreilly.com", "oreilly.com", ".oreilly.com"]
 
     cookies = {}
     browser = None
@@ -92,10 +81,10 @@ def get_oreilly_cookies():
 
     for d in domains:
         match browser:
-            case "firefox":
-                cj = browser_cookie3.firefox(domain_name=d)
             case "chrome":
                 cj = browser_cookie3.chrome(domain_name=d)
+            case "firefox":
+                cj = browser_cookie3.firefox(domain_name=d)
             case "chromium":
                 cj = browser_cookie3.chromium(domain_name=d)
         for c in cj:
@@ -107,17 +96,15 @@ CACHE = requests.Session()
 CACHE.cookies.update(get_oreilly_cookies())
 
 
-format_chapter = lambda e, t, a, j: (  # noqa: E731
+format_chapter = lambda book_json, formatted_stylesheets, chapter_content: (  # noqa: E731
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xml:lang="'
-    + e["language"]
-    + '" lang="'
-    + e["language"]
+    + book_json["language"]
     + '" xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>'
-    + html_dec(e["title"])
+    + html.escape((book_json["title"]))
     + "</title>"
-    + "".join(a)
+    + "".join(formatted_stylesheets)
     + '</head><body><div id="book-content"><div id="sbo-rt-content">'
-    + j
+    + chapter_content
     + "</div></body></html>"
 )
 
@@ -129,21 +116,20 @@ class ContentBuffer(NamedTuple):
 
 
 class OreillyEpubParser:
-    def __init__(self, id, push_func):
-        self.id, self.push_func, self.relative_stylesheets = id, push_func, []
+    def __init__(self, push_func, args):
+        self.id, self.push_func, self.args, self.relative_stylesheets = (
+            args.bookid,
+            push_func,
+            args,
+            [],
+        )
         self.book_info_json = self.get_book_json()
         self.file_list = self.get_file_list()
+        self.is_pdf_converted = False
 
         self.out_path = Path("out/")
         self.out_path.mkdir(exist_ok=True)
         print(f"Downloading {self.id}")
-
-    def sub_script(self, html: str):
-        regex = re.compile(
-            r"<script.*></script>|<link.*/>|<link.*>",
-            flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL),
-        )
-        return regex.sub("", html)
 
     def get_book_json(self):
         while True:
@@ -161,44 +147,38 @@ class OreillyEpubParser:
             lambda a, y: a + "../" if y == "/" else a, info["full_path"], initial=""
         )
 
-        html = x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
-        html = self.sub_script(html)
-
-        d = PyQuery(html)
-
-        list(
-            map(
-                lambda x: x.append("</span>"),
-                itertools.chain(d("div").find("span").items()),
-            )
+        d = PyQuery(
+            x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
         )
-        list(
-            map(
-                lambda x: x.append("</div>"),
-                itertools.chain(d("div").items()),
+
+        d.remove("script")
+        d.remove("link")
+
+        if self.is_pdf_converted:
+            list(
+                map(
+                    lambda x: x.append("</span>"),
+                    itertools.chain(d("div").find("span").items()),
+                )
             )
-        )
 
         combined_tags = itertools.chain(d("img").items(), d("image"))
 
-        for tag in combined_tags:
-            tag_html = str(tag)
-            src = tag.attr("src")
-            href = tag.attr("href")
+        def handle_tags(x):
+            src = x.attr("src")
+            href = x.attr("href")
 
             if src:
-                tag.attr("src", direct_file_path_denominator + src)
+                x.attr("src", direct_file_path_denominator + src)
 
             if href:
-                tag.attr("href", direct_file_path_denominator + href)
+                x.attr("href", direct_file_path_denominator + href)
 
-            if ">" not in tag_html:
-                tag_html = tag_html.replace(">", "/>")
-                tag.replace_with(tag_html)
+        list(map(handle_tags, combined_tags))
 
         html = str(d.html())
 
-        items = list(
+        formatted_stylesheets = list(
             map(
                 lambda x: (
                     f'<link rel="stylesheet" type="text/css" href="{direct_file_path_denominator}{x}"/>'
@@ -208,9 +188,7 @@ class OreillyEpubParser:
         )
         if d("#sbo-rt-content").eq(0):
             return bytes(
-                format_chapter(
-                    self.book_info_json, direct_file_path_denominator, items, html
-                ),
+                format_chapter(self.book_info_json, formatted_stylesheets, html),
                 encoding="utf-8",
             )
 
@@ -266,56 +244,68 @@ class OreillyEpubParser:
 
         return files
 
-    def collect_stylesheets(self, x: dict):
-        response = requests.get(LIMIT_FORMATTED_URL.format(x["spine"], 2)).json()
+    def collect_stylesheets(self):
+        response = requests.get(
+            LIMIT_FORMATTED_URL.format(self.book_info_json["spine"], 2)
+        ).json()
         results = response["results"][len(response["results"]) - 1]["url"]
         stylesheets = requests.get(results).json()["related_assets"]["stylesheets"]
         list(
             map(
                 lambda i: self.relative_stylesheets.append(
-                    stylesheets[i].replace(x["files"], "")
+                    stylesheets[i].replace(self.book_info_json["files"], "")
                 ),
                 range(0, len(stylesheets)),
             )
         )
 
+    def handle_xml(self, file):
+        type = file["media_type"]
+
+        if type == "application/oebps-package+xml":
+            container = {
+                "kind": "other_asset",
+                "full_path": "container.xml",
+                "filename": "container.xml",
+                "filename_ext": ".xml",
+            }
+            contents: bytes = bytes(
+                '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'.format(
+                    "OEBPS/" + file["full_path"], file["media_type"]
+                ),
+                encoding="utf-8",
+            )
+
+            self.push_func(
+                {
+                    "file": container,
+                    "fileContents": contents,
+                }
+            )
+            return fetch_text(file["url"])
+        elif type == "application/x-dtbncx+xml":
+            content = fetch_text(file["url"])
+
+            if not content.endswith('"UTF-8"?>'):
+                return content
+
+            return '<?xml version="1.0" encoding="UTF-8"?>' + content
+
+        return fetch_content_buffer(file["url"])
+
     def handle_file(self, file: dict):
-        if SHOULD_SLEEP:
-            time.sleep(SLEEP_TIME)
+        if self.args.sleep:
+            time.sleep(3)
 
-        match file["kind"]:
-            case "chapter":
-                return self.parse_and_replace_html(
-                    fetch_content_buffer(file["url"]).decode(), file
-                )
-            case "other_asset":
-                match file["media_type"]:
-                    case "application/oebps-package+xml":
-                        container = {
-                            "kind": "other_asset",
-                            "full_path": "container.xml",
-                            "filename": "container.xml",
-                            "filename_ext": ".xml",
-                        }
-                        contents: bytes = bytes(
-                            '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'.format(
-                                "OEBPS/" + file["full_path"], file["media_type"]
-                            ),
-                            encoding="utf-8",
-                        )
+        if self.args.verbose:
+            print(file)
 
-                        self.push_func(
-                            {
-                                "file": container,
-                                "fileContents": contents,
-                            }
-                        )
-                        return fetch_text(file["url"])  # ?
-                    case "application/x-dtbncx+xml":
-                        content = fetch_text(file["url"])
-                        if content.endswith("?xml version="):
-                            return '<?xml version="1.0" encoding="UTF-8"?>' + content
-                        return content
+        if file["kind"] == "chapter":
+            return self.parse_and_replace_html(
+                fetch_content_buffer(file["url"]).decode(), file
+            )
+        elif file["kind"] == "other_asset":
+            return self.handle_xml(file)
 
         return fetch_content_buffer(file["url"])
 
@@ -340,19 +330,35 @@ class OreillyEpubParser:
 
         print(f"Finished {self.id}")
 
+    def push_file(self, x):
+        contents = self.handle_file(x)
+
+        self.push_func(
+            {
+                "file": x,
+                "fileContents": contents
+                if isinstance(contents, bytes)
+                else contents.encode(),
+            }
+        )
+
     def get_file_contents(self):
-        self.collect_stylesheets(self.book_info_json)
+        self.collect_stylesheets()
+
+        if list(filter(lambda x: "pdf2htmlEX" in x["filename"], self.file_list)):
+            self.is_pdf_converted = True
+            self.file_list = list(
+                itertools.filterfalse(
+                    lambda x: ".js" == x["filename_ext"], self.file_list
+                )
+            )
+
+        if self.is_pdf_converted:
+            print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
 
         threads = ThreadPool(3)
         threads.map(
-            lambda e: self.push_func(
-                {
-                    "file": e,
-                    "fileContents": self.handle_file(e)
-                    if isinstance(self.handle_file(e), bytes)
-                    else self.handle_file(e).encode(),
-                }
-            ),
+            self.push_file,
             self.file_list,
         )
         threads.close()

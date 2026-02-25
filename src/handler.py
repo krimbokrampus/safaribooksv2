@@ -1,13 +1,12 @@
-import asyncio
 import itertools
 
 from epub import ContentBuffer, OreillyEpubParser
 
-i = {}
+file_contents = {}
 
 
 def map_files():
-    global i
+    global file_contents
     return list(
         itertools.starmap(
             lambda k, v: ContentBuffer(
@@ -15,15 +14,15 @@ def map_files():
                 v[2],
                 v[3]["level"],
             ),
-            i.items(),
+            file_contents.items(),
         )
     )
 
 
 def push_filelisting(x):
-    global i
+    global file_contents
     try:
-        i[x["file"]["filename"]] = [
+        file_contents[x["file"]["filename"]] = [
             x["file"]["filename_ext"],
             x["file"]["full_path"],
             x["fileContents"],
@@ -37,11 +36,11 @@ def push_filelisting(x):
         print(x["file"])
 
 
-def start(x):
-    global i
-    parser = OreillyEpubParser(x, push_filelisting)
+def start(x, args):
+    global file_contents
+    parser = OreillyEpubParser(push_filelisting, args)
     parser.get_file_contents()
 
     mapped_files = map_files()
     parser.zip_epub_contents(mapped_files)
-    i.clear()
+    file_contents.clear()
