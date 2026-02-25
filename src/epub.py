@@ -170,6 +170,12 @@ class OreillyEpubParser:
                     itertools.chain(d("div").find("span").items()),
                 )
             )
+            list(
+                map(
+                    lambda x: x.append("</div>"),
+                    itertools.chain(d("div").items()),
+                )
+            )
 
         combined_tags = itertools.chain(d("img").items(), d("image"))
 
