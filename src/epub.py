@@ -12,11 +12,7 @@ import browser_cookie3
 import requests
 from pyquery import PyQuery
 
-TEST_ID = 9781000925968
-TEST_ID_2 = 9781592538218
-TEST_ID_3 = 9781449324957
 BOOK_JSON_URL = "https://learning.oreilly.com/api/v2/epubs/{0}/"
-
 LIMIT_FORMATTED_URL = "{0}?limit={1}"
 FILE_LIST_LIMIT_FORMATTED_URL = "https://learning.oreilly.com/api/v2/epubs/urn:orm:book:{0}/files/?limit={2}&offset={1}"
 
