@@ -3,7 +3,7 @@ import argparse
 from epub import OreillyEpubParser
 
 args = argparse.ArgumentParser(
-    description="Downloads EPUBs from Oreilly.", add_help=False, allow_abbrev=False
+    description="Downloads EPUBs from Oreilly.", add_help=False, allow_abbrev=True
 )
 args.add_argument(
     "bookid",
