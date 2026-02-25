@@ -132,8 +132,6 @@ class OreillyEpubParser:
         self.file_contents = {}
         self.is_pdf_converted = False
 
-        self.get_file_contents()
-
         print(f"Downloading {self.id}")
 
     def get_book_json(self):
@@ -155,6 +153,12 @@ class OreillyEpubParser:
         d = PyQuery(
             x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
         )
+
+        if d("h1").text() == "Access Denied":
+            print(
+                "Oreilly has blacklisted your IP, wait a little or swap IPs before trying again."
+            )
+            return
 
         d.remove("script")
         d.remove("link")
@@ -192,12 +196,11 @@ class OreillyEpubParser:
             )
         )
         if d("#sbo-rt-content").eq(0):
-            return bytes(
-                format_chapter(self.book_info_json, formatted_stylesheets, html),
-                encoding="utf-8",
-            )
+            return format_chapter(
+                self.book_info_json, formatted_stylesheets, html
+            ).encode()
 
-        return bytes(html, encoding="utf-8")
+        return html.encode()
 
     def determine_relative_epub_file_path(self, filename, filename_ext, full_path):
         match filename_ext:
@@ -231,8 +234,8 @@ class OreillyEpubParser:
             ).json()["results"]
             return files
 
-        files = itertools.chain.from_iterable(
-            list(
+        files = list(
+            itertools.chain.from_iterable(
                 map(
                     lambda i: requests.get(
                         FILE_LIST_LIMIT_FORMATTED_URL.format(
@@ -333,7 +336,7 @@ class OreillyEpubParser:
             }
         )
 
-    def get_file_contents(self):
+    def setup_file_contents(self):
         self.collect_stylesheets()
 
         if list(filter(lambda x: "pdf2htmlEX" in x["filename"], self.file_list)):
@@ -373,6 +376,8 @@ class OreillyEpubParser:
         )
 
     def map_files(self):
+        self.setup_file_contents()
+
         return list(
             itertools.starmap(
                 lambda k, v: ContentBuffer(
