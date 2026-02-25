@@ -32,7 +32,7 @@ uv run --with requests --with pyquery --with browser_cookie3 python src/main.py 
 
 By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it will switch to Firefox. If Firefox doesn't exist, it will fallback to Chromium.
 
-I recommend running ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF converted, so watch out for that.
+I recommend running calibre's ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF converted, so watch out for that.
 
 **```static/out.json``` is a metadata dump of all Oreilly Books, as of 02/23/26.** <br>
 **```static/filelist.json``` is an API dump of ```Handbook of International Economics```'s filelist for when I was making the Parser.**
