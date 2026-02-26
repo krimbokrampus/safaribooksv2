@@ -132,7 +132,7 @@ class OreillyEpubParser:
             print(
                 "Oreilly has blacklisted your IP, wait a little or swap IPs before trying again."
             )
-            return
+            sys.exit()
 
         d.remove("script")
         d.remove("link")

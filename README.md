@@ -1,6 +1,6 @@
 # Safaribooks v2 Downloader
 > [!WARNING] 
-> Oreilly's v2 API seems to hate when you download multiple EPUBs, so they will effectively blacklist the requesting IP temporarily. It'll spam terminal when this occurs.
+> Oreilly's v2 API seems to hate when you download multiple EPUBs, so they will effectively blacklist the requesting IP temporarily. It'll print and exit the app when this occurs.
 
 > [!NOTE] 
 > PRs are welcome! I do ask that you conform to my style; though, it's not explicitly required. I use Ruff and ty. I've got a rough idea of where to take the TUI, so I'll be working on that.
