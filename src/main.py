@@ -13,7 +13,7 @@ args.add_argument(
     "--verbose",
     dest="verbose",
     action="store_true",
-    help="Prints the files as they are scraped.",
+    help="Prints details about the files, as they are requested. mostly for debugging purposes.",
 )
 args.add_argument(
     "--sleep",

@@ -1,6 +1,8 @@
-import code
 import html
 import itertools
+import os
+import re
+import sys
 import time
 from functools import reduce
 from multiprocessing.pool import ThreadPool
@@ -24,6 +26,7 @@ XML_CONTAINER = {
 }
 XML_CONTENTS = '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'
 
+escape_dirname = lambda x: re.compile(r"[^a-zA-Z0-9_ ]").sub("_", x)  # noqa: E731
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
@@ -36,34 +39,6 @@ KINDLE_HTML = (
     "{{overflow-x:unset!important;overflow:unset!important;"
     "overflow-y:unset!important;white-space:pre-wrap!important;}}"
 )
-
-
-# sourced from https://github.com/lorenzodifuccia/safaribooks/blob/master/safaribooks.py
-def escape_dirname(dirname, clean_space=False):
-    for ch in [
-        "~",
-        "#",
-        "%",
-        "&",
-        "*",
-        "{",
-        "}",
-        "\\",
-        "<",
-        ">",
-        "?",
-        "/",
-        "`",
-        "'",
-        '"',
-        "|",
-        "+",
-        ":",
-    ]:
-        if ch in dirname:
-            dirname = dirname.replace(ch, "_")
-
-    return dirname if not clean_space else dirname.replace(" ", "")
 
 
 # sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
@@ -119,7 +94,7 @@ format_chapter = lambda book_json, formatted_stylesheets, chapter_content: (  # 
 
 
 class ContentBuffer(NamedTuple):
-    filepath: str
+    file_path: str
     buffer: bytes
     level: int
 
@@ -208,13 +183,11 @@ class OreillyEpubParser:
 
         return html.encode()
 
-    def determine_relative_epub_file_path(self, filename, filename_ext, full_path):
-        match filename_ext:
-            case ".xml":
-                if filename.startswith("container"):
-                    return "META-INF/{0}".format(full_path)
-            case "":
-                return full_path
+    def determine_relative_epub_file_path(self, filename, full_path):
+        if filename.startswith("container"):
+            return "META-INF/{0}".format(full_path)
+        elif filename.startswith("mimetype"):
+            return full_path
 
         return "OEBPS/{0}".format(full_path)
 
@@ -252,7 +225,6 @@ class OreillyEpubParser:
                 )
             )
         )
-
         return files
 
     def collect_stylesheets(self):
@@ -313,7 +285,13 @@ class OreillyEpubParser:
         with ZipFile(
             (
                 OUT_PATH
-                / ("{0}.epub".format(escape_dirname(self.book_info_json["title"])))
+                / (
+                    "{0}.epub".format(
+                        escape_dirname(self.book_info_json["title"])
+                        if "win" in sys.platform
+                        else self.book_info_json["title"]
+                    )
+                )
             ),
             "w",
             compression=ZIP_DEFLATED,
@@ -321,7 +299,7 @@ class OreillyEpubParser:
             list(
                 map(
                     lambda x: handle.writestr(
-                        x.filepath, x.buffer, compresslevel=x.level
+                        x.file_path, x.buffer, compresslevel=x.level
                     ),
                     mapped_files,
                 )
@@ -349,7 +327,7 @@ class OreillyEpubParser:
             self.is_pdf_converted = True
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: ".js" == x["filename_ext"], self.file_list
+                    lambda x: ".js" or "pdf2htmlEX" in x["filename"], self.file_list
                 )
             )
 
@@ -375,7 +353,6 @@ class OreillyEpubParser:
                     "kind": "other_asset",
                     "full_path": "mimetype",
                     "filename": "mimetype",
-                    "filename_ext": "",
                 },
                 "fileContents": bytes("application/epub+zip", encoding="utf-8"),
             }
@@ -387,7 +364,7 @@ class OreillyEpubParser:
         return list(
             itertools.starmap(
                 lambda k, v: ContentBuffer(
-                    self.determine_relative_epub_file_path(k, v[0], v[1]),
+                    self.determine_relative_epub_file_path(k, v[0]),
                     v[2],
                     v[3]["level"],
                 ),
