@@ -326,7 +326,8 @@ class OreillyEpubParser:
             self.is_pdf_converted = True
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: ".js" or "pdf2htmlEX" in x["filename"], self.file_list
+                    lambda x: ".js" in x["filename"] or "pdf2htmlEX" in x["filename"],
+                    self.file_list
                 )
             )
 
