@@ -364,8 +364,8 @@ class OreillyEpubParser:
             itertools.starmap(
                 lambda k, v: ContentBuffer(
                     self.determine_relative_epub_file_path(k, v[0]),
-                    v[2],
-                    v[3]["level"],
+                    v[1],
+                    v[2]["level"],
                 ),
                 self.file_contents.items(),
             )
@@ -373,7 +373,6 @@ class OreillyEpubParser:
 
     def push_filelisting(self, x):
         self.file_contents[x["file"]["filename"]] = [
-            x["file"]["filename_ext"],
             x["file"]["full_path"],
             x["fileContents"],
             {
