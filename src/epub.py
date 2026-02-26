@@ -352,6 +352,7 @@ class OreillyEpubParser:
                     "kind": "other_asset",
                     "full_path": "mimetype",
                     "filename": "mimetype",
+                    "filename_ext": "",
                 },
                 "fileContents": bytes("application/epub+zip", encoding="utf-8"),
             }
@@ -363,7 +364,7 @@ class OreillyEpubParser:
         return list(
             itertools.starmap(
                 lambda k, v: ContentBuffer(
-                    self.determine_relative_epub_file_path(k, v[0]),
+                    self.determine_relative_epub_file_path(k, v[1]),
                     v[2],
                     v[3]["level"],
                 ),
