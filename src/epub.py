@@ -324,15 +324,13 @@ class OreillyEpubParser:
 
         if list(filter(lambda x: "pdf2htmlEX" in x["filename"], self.file_list)):
             self.is_pdf_converted = True
+            print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
                     lambda x: ".js" in x["filename"] or "pdf2htmlEX" in x["filename"],
                     self.file_list
                 )
             )
-
-        if self.is_pdf_converted:
-            print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
 
         self.file_list = list(
             itertools.filterfalse(
