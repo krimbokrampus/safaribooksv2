@@ -1,6 +1,5 @@
 import html
 import itertools
-import os
 import re
 import sys
 import time
