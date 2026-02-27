@@ -26,7 +26,7 @@ XML_CONTAINER = {
 }
 XML_CONTENTS = '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'
 
-escape_dirname = lambda x: re.compile(r"[^a-zA-Z0-9_ ]").sub("_", x)  # noqa: E731
+escape_dirname = lambda x: re.compile(r"[^a-zA-Z0-9_,. ]").sub("_", x)  # noqa: E731
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
@@ -314,7 +314,9 @@ class OreillyEpubParser:
             print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: re.compile("^pdf2htmlEX|.js$").fullmatch(x["filename"]),
+                    lambda x: re.compile("^pdf2htmlEX|^[A-Za-z]+.js$").match(
+                        x["filename"]
+                    ),
                     self.file_list,
                 )
             )
