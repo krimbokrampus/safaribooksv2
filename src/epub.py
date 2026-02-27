@@ -3,6 +3,7 @@ import itertools
 import re
 import sys
 import time
+from collections import deque
 from functools import reduce
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -103,7 +104,7 @@ class OreillyEpubParser:
         self.id, self.args, self.relative_stylesheets = args.bookid, args, []
         self.book_info_json = self.get_book_json()
         self.file_list = self.get_file_list()
-        self.file_contents = {}
+        self.file_contents = deque()
         self.is_pdf_converted = False
 
         print(f"Downloading {self.id}")
@@ -175,6 +176,7 @@ class OreillyEpubParser:
                 self.relative_stylesheets,
             )
         )
+
         if d("#sbo-rt-content").eq(0):
             return format_chapter(
                 self.book_info_json, formatted_stylesheets, html
@@ -234,10 +236,10 @@ class OreillyEpubParser:
         stylesheets = requests.get(results).json()["related_assets"]["stylesheets"]
         list(
             map(
-                lambda i: self.relative_stylesheets.append(
-                    stylesheets[i].replace(self.book_info_json["files"], "")
+                lambda sheet: self.relative_stylesheets.append(
+                    sheet.replace(self.book_info_json["files"], "")
                 ),
-                range(0, len(stylesheets)),
+                stylesheets,
             )
         )
 
@@ -245,22 +247,25 @@ class OreillyEpubParser:
         type = file["media_type"]
 
         if type == "application/oebps-package+xml":
-            self.push_filelisting(
-                {
-                    "file": XML_CONTAINER,
-                    "fileContents": XML_CONTENTS.format(
+            self.file_contents.append(
+                ContentBuffer(
+                    self.determine_relative_epub_file_path(
+                        XML_CONTAINER["filename"], XML_CONTAINER["full_path"]
+                    ),
+                    XML_CONTENTS.format(
                         "OEBPS/" + file["full_path"], file["media_type"]
                     ).encode(),
-                }
+                    9,
+                )
             )
-            return fetch_text(file["url"])
+            return fetch_text(file["url"]).encode()
         elif type == "application/x-dtbncx+xml":
-            content = fetch_text(file["url"])
+            content = fetch_content_buffer(file["url"])
 
-            if not content.endswith('"UTF-8"?>'):
+            if not content.endswith(b'"UTF-8"?>'):
                 return content
 
-            return '<?xml version="1.0" encoding="UTF-8"?>' + content
+            return b'<?xml version="1.0" encoding="UTF-8"?>' + content
 
         return fetch_content_buffer(file["url"])
 
@@ -280,17 +285,11 @@ class OreillyEpubParser:
 
         return fetch_content_buffer(file["url"])
 
-    def zip_epub_contents(self, mapped_files):
+    def zip_epub_contents(self, book_contents):
         with ZipFile(
             (
                 OUT_PATH
-                / (
-                    "{0}.epub".format(
-                        escape_dirname(self.book_info_json["title"])
-                        if "win" in sys.platform
-                        else self.book_info_json["title"]
-                    )
-                )
+                / ("{0}.epub".format(escape_dirname(self.book_info_json["title"])))
             ),
             "w",
             compression=ZIP_DEFLATED,
@@ -300,24 +299,12 @@ class OreillyEpubParser:
                     lambda x: handle.writestr(
                         x.file_path, x.buffer, compresslevel=x.level
                     ),
-                    mapped_files,
+                    book_contents,
                 )
             )
             handle.close()
 
         print(f"Finished {self.id}")
-
-    def push_file(self, x):
-        contents = self.handle_file(x)
-
-        self.push_filelisting(
-            {
-                "file": x,
-                "fileContents": contents
-                if isinstance(contents, bytes)
-                else contents.encode(),
-            }
-        )
 
     def setup_file_contents(self):
         self.collect_stylesheets()
@@ -327,56 +314,32 @@ class OreillyEpubParser:
             print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: ".js" in x["filename"] or "pdf2htmlEX" in x["filename"],
-                    self.file_list
+                    lambda x: re.compile("^pdf2htmlEX|.js$").fullmatch(x["filename"]),
+                    self.file_list,
                 )
             )
 
-        self.file_list = list(
-            itertools.filterfalse(
-                lambda x: "container.xml" == x["filename"], self.file_list
-            )
-        )
-
         threads = ThreadPool(3)
         threads.map(
-            self.push_file,
+            lambda x: self.file_contents.append(
+                ContentBuffer(
+                    self.determine_relative_epub_file_path(
+                        x["filename"], x["full_path"]
+                    ),
+                    self.handle_file(x),
+                    0 if "image" == x["kind"] else 9,
+                )
+            ),
             self.file_list,
         )
         threads.close()
 
-        self.push_filelisting(
-            {
-                "file": {
-                    "kind": "other_asset",
-                    "full_path": "mimetype",
-                    "filename": "mimetype",
-                },
-                "fileContents": bytes("application/epub+zip", encoding="utf-8"),
-            }
-        )
-
-    def map_files(self):
-        self.setup_file_contents()
-
-        return list(
-            itertools.starmap(
-                lambda k, v: ContentBuffer(
-                    self.determine_relative_epub_file_path(k, v[0]),
-                    v[1],
-                    v[2]["level"],
-                ),
-                self.file_contents.items(),
+        self.file_contents.append(
+            ContentBuffer(
+                self.determine_relative_epub_file_path("mimetype", "mimetype"),
+                b"application/epub+zip",
+                0,
             )
         )
 
-    def push_filelisting(self, x):
-        self.file_contents[x["file"]["filename"]] = [
-            x["file"]["full_path"],
-            x["fileContents"],
-            {
-                "level": 0
-                if "image" == x["file"]["kind"] or "mimetype" == x["file"]["full_path"]
-                else 9
-            },
-        ]
+        return self.file_contents
