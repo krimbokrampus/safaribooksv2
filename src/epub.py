@@ -33,11 +33,11 @@ fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 OUT_PATH = Path("out/")
 OUT_PATH.mkdir(exist_ok=True)
 
-KINDLE_HTML = (
-    "#sbo-rt-content *{{word-wrap:break-word!important;"
-    "word-break:break-word!important;}}#sbo-rt-content table,#sbo-rt-content pre"
-    "{{overflow-x:unset!important;overflow:unset!important;"
-    "overflow-y:unset!important;white-space:pre-wrap!important;}}"
+KINDLE_CSS = (
+    b"#sbo-rt-content *{{word-wrap:break-word!important;"
+    b"word-break:break-word!important;}}#sbo-rt-content table,#sbo-rt-content pre"
+    b"{{overflow-x:unset!important;overflow:unset!important;"
+    b"overflow-y:unset!important;white-space:pre-wrap!important;}}"
 )
 
 
@@ -222,7 +222,7 @@ class OreillyEpubParser:
                             self.book_info_json["identifier"], i, 1000
                         )
                     ).json()["results"],
-                    list(range(0, file_count, 1000)),
+                    list(range(0, file_count + 1, 1000)),
                 )
             )
         )
@@ -242,6 +242,16 @@ class OreillyEpubParser:
                 stylesheets,
             )
         )
+
+        if self.args.kindle:
+            self.file_contents.append(
+                ContentBuffer(
+                    self.determine_relative_epub_file_path("kindle.css", "kindle.css"),
+                    KINDLE_CSS,
+                    9,
+                )
+            )
+            self.relative_stylesheets.append("kindle.css")
 
     def handle_xml(self, file):
         type = file["media_type"]

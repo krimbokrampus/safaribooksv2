@@ -21,6 +21,12 @@ args.add_argument(
     action="store_true",
     help="Sleeps when requesting files to prevent IP from being flagged.",
 )
+args.add_argument(
+    "--kindle",
+    dest="kindle",
+    action="store_true",
+    help="Adds CSS rules to block overflow on Kindle Devices.",
+)
 
 parser = OreillyEpubParser(args.parse_args())
 book_contents = parser.setup_file_contents()
