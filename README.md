@@ -8,7 +8,7 @@
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension - credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 
 ## Setup
-Requires Python >3.10
+Requires Python 3.14
 
 > [!NOTE] 
 > These setup commands are for Linux, specifically. The uv one should work for Windows.
