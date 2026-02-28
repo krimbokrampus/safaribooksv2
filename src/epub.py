@@ -46,30 +46,9 @@ def get_oreilly_cookies():
     domains = ["learning.oreilly.com", "www.oreilly.com", "oreilly.com", ".oreilly.com"]
 
     cookies = {}
-    browser = None
-
-    try:
-        try:
-            _ = browser_cookie3.chrome()
-            browser = "chrome"
-        except browser_cookie3.BrowserCookieError:
-            print("failed to locate chrome cookies")
-            _ = browser_cookie3.firefox()
-            browser = "firefox"
-    except browser_cookie3.BrowserCookieError:
-        print("failed to locate firefox cookies")
-        _ = browser_cookie3.chromium()
-        browser = "chromium"
-
+    
     def scrape_cookie(domain: str):
-        match browser:
-            case "chrome":
-                cj = browser_cookie3.chrome(domain_name=domain)
-            case "firefox":
-                cj = browser_cookie3.firefox(domain_name=domain)
-            case "chromium":
-                cj = browser_cookie3.chromium(domain_name=domain)
-
+        cj = browser_cookie3.load(domain_name=d)
         list(map(lambda c: cookies.update({c.name: c.value}), cj))
 
     list(map(scrape_cookie, domains))
