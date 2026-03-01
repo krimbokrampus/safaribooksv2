@@ -1,5 +1,6 @@
 import html
 import itertools
+import random
 import re
 import sys
 import time
@@ -43,7 +44,14 @@ KINDLE_CSS = (
 
 # sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
 def get_oreilly_cookies():
-    domains = ["learning.oreilly.com", "www.oreilly.com", ".oreilly.com", ".learning.oreilly.com"]
+    domains = [
+        "learning.oreilly.com",
+        "www.oreilly.com",
+        ".oreilly.com",
+        ".learning.oreilly.com",
+        "oreilly.com",
+        "api.oreilly.com",
+    ]
 
     cookies = {}
     browser = None
@@ -60,7 +68,6 @@ def get_oreilly_cookies():
         print("failed to locate firefox cookies")
         browser = "chromium"
 
-    
     def scrape_cookie(domain: str):
         match browser:
             case "chrome":
@@ -69,7 +76,6 @@ def get_oreilly_cookies():
                 cj = browser_cookie3.firefox(domain_name=domain)
             case "chromium":
                 cj = browser_cookie3.chromium(domain_name=domain)
-
         list(map(lambda c: cookies.update({c.name: c.value}), cj))
 
     list(map(scrape_cookie, domains))
@@ -107,7 +113,7 @@ class OreillyEpubParser:
         self.file_contents = deque()
         self.is_pdf_converted = False
 
-        print(f"Downloading {self.id}")
+        print(f"Downloading {self.book_info_json['title']}")
 
     def get_book_json(self):
         while True:
@@ -125,9 +131,15 @@ class OreillyEpubParser:
             lambda a, y: a + "../" if y == "/" else a, info["full_path"], initial=""
         )
 
-        d = PyQuery(
-            x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
-        )
+        if info["filename"] == "titlepage.xhtml":
+            d = PyQuery(
+                x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), ""),
+                parser="html",
+            )
+        else:
+            d = PyQuery(
+                x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
+            )
 
         if d("h1").text() == "Access Denied":
             print(
@@ -152,9 +164,9 @@ class OreillyEpubParser:
                 )
             )
 
-        combined_tags = itertools.chain(d("img").items(), d("image"))
+        images = itertools.chain(d("img").items(), d("image"))
 
-        def handle_tags(x):
+        def handle_images(x):
             src = x.attr("src")
             href = x.attr("href")
 
@@ -164,9 +176,15 @@ class OreillyEpubParser:
             if href:
                 x.attr("href", direct_file_path_denominator + href)
 
-        list(map(handle_tags, combined_tags))
-
-        html = str(d.html())
+        if info["filename"] == "titlepage.xhtml":
+            cover_href = d("image").attr("href")
+            html = str(d.html()).replace(
+                f'href="{cover_href}"',
+                f'href="{direct_file_path_denominator}{cover_href}"',
+            )
+        else:
+            list(map(handle_images, images))
+            html = str(d.html())
 
         formatted_stylesheets = list(
             map(
@@ -222,7 +240,7 @@ class OreillyEpubParser:
                             self.book_info_json["identifier"], i, 1000
                         )
                     ).json()["results"],
-                    list(range(0, file_count + 1, 1000)),
+                    list(range(0, file_count, 1000)),
                 )
             )
         )
@@ -281,7 +299,7 @@ class OreillyEpubParser:
 
     def handle_file(self, file: dict):
         if self.args.sleep:
-            time.sleep(3)
+            time.sleep(random.random())
 
         if self.args.verbose:
             print(file)
@@ -299,7 +317,11 @@ class OreillyEpubParser:
         with ZipFile(
             (
                 OUT_PATH
-                / ("{0}.epub".format(escape_dirname(self.book_info_json["title"])))
+                / (
+                    "{0}.epub".format(escape_dirname(self.book_info_json["title"]))
+                    if "win" in sys.platform
+                    else "{0}.epub".format(self.book_info_json["title"])
+                )
             ),
             "w",
             compression=ZIP_DEFLATED,
@@ -314,7 +336,7 @@ class OreillyEpubParser:
             )
             handle.close()
 
-        print(f"Finished {self.id}")
+        print(f"Finished {self.book_info_json['title']}")
 
     def setup_file_contents(self):
         self.collect_stylesheets()
