@@ -131,15 +131,9 @@ class OreillyEpubParser:
             lambda a, y: a + "../" if y == "/" else a, info["full_path"], initial=""
         )
 
-        if info["filename"] == "titlepage.xhtml":
-            d = PyQuery(
-                x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), ""),
-                parser="html",
-            )
-        else:
-            d = PyQuery(
-                x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
-            )
+        d = PyQuery(
+            x.replace("/api/v2/epubs/urn:orm:book:{0}/files/".format(self.id), "")
+        )
 
         if d("h1").text() == "Access Denied":
             print(
