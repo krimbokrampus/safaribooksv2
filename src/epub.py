@@ -27,7 +27,11 @@ XML_CONTAINER = {
 }
 XML_CONTENTS = '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'
 
-escape_dirname = lambda x: re.compile(r"[^a-zA-Z0-9_,. ]").sub("_", x)  # noqa: E731
+escape_dirname = lambda x: (  # noqa: E731
+    re.compile(r"[^a-zA-Z0-9_,.-\"' ]").sub("_", x)
+    if "win" in sys.platform
+    else x.replace("/", "_")
+)
 fetch_content_buffer = lambda url: CACHE.get(url).content  # noqa: E731
 fetch_text = lambda url: CACHE.get(url).text  # noqa: E731
 
@@ -293,7 +297,7 @@ class OreillyEpubParser:
 
     def handle_file(self, file: dict):
         if self.args.sleep:
-            time.sleep(random.random())
+            time.sleep(random.randrange(0, 3))
 
         if self.args.verbose:
             print(file)
@@ -311,11 +315,7 @@ class OreillyEpubParser:
         with ZipFile(
             (
                 OUT_PATH
-                / (
-                    "{0}.epub".format(escape_dirname(self.book_info_json["title"]))
-                    if "win" in sys.platform
-                    else "{0}.epub".format(self.book_info_json["title"])
-                )
+                / "{0}.epub".format(escape_dirname(self.book_info_json["title"]))
             ),
             "w",
             compression=ZIP_DEFLATED,
