@@ -28,7 +28,7 @@ XML_CONTAINER = {
 XML_CONTENTS = '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="{0}" media-type="{1}"/></rootfiles></container>'
 
 escape_dirname = lambda x: (  # noqa: E731
-    re.compile(r"[^a-zA-Z0-9_,.-\"' ]").sub("_", x)
+    re.compile(r"[^a-zA-Z0-9_,.\-\"' ]").sub("_", x)
     if "win" in sys.platform
     else x.replace("/", "_")
 )
