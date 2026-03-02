@@ -165,14 +165,24 @@ class OreillyEpubParser:
         images = itertools.chain(d("img").items(), d("image"))
 
         def handle_images(x):
-            src = x.attr("src")
-            href = x.attr("href")
+            try:
+                src = x.attr("src")
+                href = x.attr("href")
 
-            if src:
-                x.attr("src", direct_file_path_denominator + src)
+                if src:
+                    x.attr("src", direct_file_path_denominator + src)
 
-            if href:
-                x.attr("href", direct_file_path_denominator + href)
+                if href:
+                    x.attr("href", direct_file_path_denominator + href)
+            except AttributeError:  # fallback to direct lxml editing
+                src = x.get("src")
+                href = x.get("href")
+
+                if src:
+                    x.set("src", direct_file_path_denominator + src)
+
+                if href:
+                    x.set("href", direct_file_path_denominator + href)
 
         if info["filename"] == "titlepage.xhtml":
             cover_href = d("image").attr("href")
