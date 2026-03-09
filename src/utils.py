@@ -1,7 +1,7 @@
 import html
 import re
 import sys
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import browser_cookie3
 from requests import Response
@@ -26,7 +26,7 @@ def escape_dirname(x):
     )
 
 
-def fetch(url: str) -> Response | None:
+def fetch(url: str) -> Optional[Response]:
     res = None
 
     while not res:
@@ -49,7 +49,6 @@ def get_oreilly_cookies() -> dict:
         "learning.oreilly.com",
         "www.oreilly.com",
         ".oreilly.com",
-        ".learning.oreilly.com",
         "oreilly.com",
         "api.oreilly.com",
     ]
@@ -63,20 +62,23 @@ def get_oreilly_cookies() -> dict:
             browser = "chrome"
         except browser_cookie3.BrowserCookieError:
             print("failed to locate chrome cookies")
-            _ = browser_cookie3.firefox()
-            browser = "firefox"
+            _ = browser_cookie3.brave()
+            browser = "brave"
     except browser_cookie3.BrowserCookieError:
-        print("failed to locate firefox cookies")
+        print("failed to locate brave cookies")
         browser = "chromium"
 
     def scrape_cookie(domain: str):
-        match browser:
-            case "chrome":
-                cj = browser_cookie3.chrome(domain_name=domain)
-            case "firefox":
-                cj = browser_cookie3.firefox(domain_name=domain)
-            case "chromium":
-                cj = browser_cookie3.chromium(domain_name=domain)
+        if "win" in sys.platform:  # func broke on linux
+            cj = browser_cookie3.load(domain_name=domain)
+        else:
+            match browser:
+                case "chrome":
+                    cj = browser_cookie3.chrome(domain_name=domain)
+                case "brave":
+                    cj = browser_cookie3.brave(domain_name=domain)
+                case "chromium":
+                    cj = browser_cookie3.chromium(domain_name=domain)
         list(map(lambda c: cookies.update({c.name: c.value}), cj))
 
     list(map(scrape_cookie, domains))

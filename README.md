@@ -30,7 +30,7 @@ cd safaribooksv2
 uv run --with requests --with pyquery --with browser_cookie3 python src/main.py <BOOKID>
 ```
 
-By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it will switch to Firefox. If Firefox doesn't exist, it will fallback to Chromium.
+By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it will switch to Firefox. If Brave doesn't exist, it will fallback to Chromium.
 
 I recommend running calibre's ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF converted, so watch out for that.
 

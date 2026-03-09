@@ -5,10 +5,11 @@ import sys
 import time
 from argparse import Namespace
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
-from multiprocessing.pool import ThreadPool
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from lxml.html import HtmlElement
 from pyquery import PyQuery
 
 from constants import (
@@ -60,6 +61,12 @@ class OreillyEpubParser:
         if self.is_pdf_converted:
             list(
                 map(
+                    lambda x: x.append("</a>"),
+                    itertools.chain(d("div").find("a").items()),
+                )
+            )
+            list(
+                map(
                     lambda x: x.append("</span>"),
                     itertools.chain(d("div").find("span").items()),
                 )
@@ -71,27 +78,16 @@ class OreillyEpubParser:
                 )
             )
 
-        images = itertools.chain(d("img").items(), d("image"))
+        images = itertools.chain(d("img").items(), d("image").items())
 
         def handle_images(x):
-            try:
-                src = x.attr("src")
-                href = x.attr("href")
+            for elem in ("src", "href"):
+                attr = x.attr(elem) if not isinstance(x, HtmlElement) else x.get(elem)
 
-                if src:
-                    x.attr("src", direct_file_path_denominator + src)
-
-                if href:
-                    x.attr("href", direct_file_path_denominator + href)
-            except AttributeError:  # fallback to direct lxml editing
-                src = x.get("src")
-                href = x.get("href")
-
-                if src:
-                    x.set("src", direct_file_path_denominator + src)
-
-                if href:
-                    x.set("href", direct_file_path_denominator + href)
+                if attr:
+                    x.attr(elem, direct_file_path_denominator + attr) if not isinstance(
+                        x, HtmlElement
+                    ) else x.set(elem, direct_file_path_denominator + attr)
 
         if info["filename"] == "titlepage.xhtml":
             cover_href = d("image").attr("href")
@@ -244,18 +240,9 @@ class OreillyEpubParser:
                 )
             )
 
-        threads = ThreadPool(3)
-        threads.map(
-            lambda x: self.file_contents.append(
-                ContentBuffer(
-                    f"OEBPS/{x['full_path']}",
-                    self.handle_file(x),
-                    0 if "image" == x["kind"] else 9,
-                )
-            ),
-            self.file_list,
-        )
-        threads.close()
+        with ThreadPoolExecutor(3) as threads:
+            [threads.submit(self.push_buffer(file)) for file in self.file_list]
+            threads.shutdown(wait=True)
 
         self.file_contents.append(
             ContentBuffer(
@@ -266,3 +253,12 @@ class OreillyEpubParser:
         )
 
         return self.file_contents
+
+    def push_buffer(self, x: dict):
+        self.file_contents.append(
+            ContentBuffer(
+                f"OEBPS/{x['full_path']}",
+                self.handle_file(x),
+                0 if "image" == x["kind"] else 9,
+            )
+        )
