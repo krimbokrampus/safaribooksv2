@@ -3,7 +3,7 @@
 > Oreilly's v2 API seems to hate when you download multiple EPUBs, so they will effectively blacklist the requesting IP temporarily. It'll print and exit the app when this occurs.
 
 > [!NOTE] 
-> PRs are welcome! I do ask that you conform to my style; though, it's not explicitly required. I use Ruff and ty. I've got a rough idea of where to take the TUI, so I'll be working on that.
+> PRs are welcome! If the recent Safaribooks PRs get merged, I'll defunct this repo. It's mostly been used just to get books. I may or may not make a UI, the ideas I've had work substantially better with a GUI; however, I like the clean, elegant design of a TUI.
 
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension - credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 

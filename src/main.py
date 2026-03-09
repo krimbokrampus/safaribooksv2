@@ -1,9 +1,12 @@
 import argparse
+from collections import deque
 
+from constants import CACHE, OUT_PATH
 from epub import OreillyEpubParser
+from utils import get_oreilly_cookies
 
 args = argparse.ArgumentParser(
-    description="Downloads EPUBs from Oreilly.", add_help=False, allow_abbrev=True
+    description="Downloads EPUBs from Oreilly.", add_help=True, allow_abbrev=True
 )
 args.add_argument(
     "bookid",
@@ -13,7 +16,7 @@ args.add_argument(
     "--verbose",
     dest="verbose",
     action="store_true",
-    help="Prints details about the files, as they are requested. mostly for debugging purposes.",
+    help="Prints information about the files as they are requested.",
 )
 args.add_argument(
     "--sleep",
@@ -28,6 +31,8 @@ args.add_argument(
     help="Adds CSS rules to block overflow on Kindle Devices.",
 )
 
-parser = OreillyEpubParser(args.parse_args())
-book_contents = parser.setup_file_contents()
+OUT_PATH.mkdir(exist_ok=True)
+CACHE.cookies.update(get_oreilly_cookies())
+parser: OreillyEpubParser = OreillyEpubParser(args.parse_args())
+book_contents: deque = parser.setup_file_contents()
 parser.zip_epub_contents(book_contents)
