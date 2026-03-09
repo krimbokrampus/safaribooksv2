@@ -233,7 +233,7 @@ class OreillyEpubParser:
             print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: re.compile("^pdf2htmlEX|^[A-Za-z]+.js$").match(
+                    lambda x: re.compile("^pdf2htmlEX").match(
                         x["filename"]
                     ),
                     self.file_list,
