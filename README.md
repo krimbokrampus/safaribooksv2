@@ -34,4 +34,4 @@ By default, it will grab your cookies using Chrome. If Chrome doesn't exist, it 
 
 I recommend running calibre's ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF converted, so watch out for that.
 
-**```static/out.json``` is a metadata dump of all Oreilly Books, as of 03/01/26.**
+**```static/out.json``` is a metadata dump of all Oreilly Books, as of 03/08/26.**
