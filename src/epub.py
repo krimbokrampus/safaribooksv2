@@ -161,7 +161,7 @@ class OreillyEpubParser:
         if self.args.kindle:
             self.file_contents.append(
                 ContentBuffer(
-                    "OEDPS/kindle.css",
+                    "OEBPS/kindle.css",
                     KINDLE_CSS,
                     9,
                 )
