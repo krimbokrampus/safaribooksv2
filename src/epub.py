@@ -239,7 +239,7 @@ class OreillyEpubParser:
             )
 
         with ThreadPoolExecutor(3) as threads:
-            [threads.submit(self.push_buffer(file)) for file in self.file_list]
+            [threads.submit(self.push_buffer, file) for file in self.file_list]
             threads.shutdown(wait=True)
 
         self.file_contents.append(
