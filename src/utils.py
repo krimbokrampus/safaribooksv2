@@ -56,7 +56,7 @@ def get_oreilly_cookies() -> dict:
     cookies = {}
     browser = None
 
-    if "linux" == sys.platform:
+    if "win" not in sys.platform:
         try:
             try:
                 _ = browser_cookie3.chrome()
