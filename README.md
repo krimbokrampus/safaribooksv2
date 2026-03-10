@@ -38,5 +38,11 @@ I recommend running calibre's ```ebook-convert``` on the end-result, to rid any 
 
 **```static/out.json``` is a metadata dump of all Oreilly Books, as of 03/08/26.**
 
+## License
+This entire work is in the Public Domain, I could care less with what you do to the code. If you know Python – since it's relatively easy to learn – I encourage you to contribute, this repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks isn't. 
+
+### Why stay with Python?
+The answer is simple: to allow more people to help develop the tool, that was the purpose after seeing the stacked amount of PRs in Safaribooks.
+
 [^1]: Somewhat, see [here](https://github.com/krimbokrampus/safaribooksv2/issues/3)
 [^2]: It should contain your profile directory. It's located on ```about:profiles``` in Firefox, under ```Root Directory```. Move/Backup the entire parent directory. If possible, change where it's located, if it's the default directory. Moving it should suffice, though.
