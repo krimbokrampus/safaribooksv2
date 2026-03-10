@@ -255,10 +255,12 @@ class OreillyEpubParser:
         return self.file_contents
 
     def push_buffer(self, x: dict):
+        buf = self.handle_file(x)
+        
         self.file_contents.append(
             ContentBuffer(
                 f"OEBPS/{x['full_path']}",
-                self.handle_file(x),
+                buf,
                 0 if "image" == x["kind"] else 9,
             )
         )
