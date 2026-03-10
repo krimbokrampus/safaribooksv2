@@ -18,7 +18,7 @@ def format_chapter(book_json, formatted_stylesheets, chapter_content) -> str:
     )
 
 
-def escape_dirname(x):
+def escape_dirname(x) -> str:
     return (
         re.compile(r"[^a-zA-Z0-9_,.\-\"' ]").sub("_", x)
         if "win" in sys.platform
@@ -56,21 +56,22 @@ def get_oreilly_cookies() -> dict:
     cookies = {}
     browser = None
 
-    try:
+    if "linux" == sys.platform:
         try:
-            _ = browser_cookie3.chrome()
-            browser = "chrome"
+            try:
+                _ = browser_cookie3.chrome()
+                browser = "chrome"
+            except browser_cookie3.BrowserCookieError:
+                print("failed to locate chrome cookies")
+                _ = browser_cookie3.brave()
+                browser = "brave"
         except browser_cookie3.BrowserCookieError:
-            print("failed to locate chrome cookies")
-            _ = browser_cookie3.brave()
-            browser = "brave"
-    except browser_cookie3.BrowserCookieError:
-        print("failed to locate brave cookies")
-        browser = "chromium"
+            print("failed to locate brave cookies")
+            browser = "chromium"
 
     def scrape_cookie(domain: str):
-        if "win" in sys.platform:  # func broke on linux
-            cj = browser_cookie3.load(domain_name=domain)
+        if "win" in sys.platform:
+            cj = browser_cookie3.load(domain_name=domain)  # func broke on linux
         else:
             match browser:
                 case "chrome":

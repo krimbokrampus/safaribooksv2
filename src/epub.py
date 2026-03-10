@@ -233,9 +233,7 @@ class OreillyEpubParser:
             print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
-                    lambda x: re.compile("^pdf2htmlEX").match(
-                        x["filename"]
-                    ),
+                    lambda x: re.compile("^pdf2htmlEX").match(x["filename"]),
                     self.file_list,
                 )
             )
@@ -256,7 +254,7 @@ class OreillyEpubParser:
 
     def push_buffer(self, x: dict):
         buf = self.handle_file(x)
-        
+
         self.file_contents.append(
             ContentBuffer(
                 f"OEBPS/{x['full_path']}",
