@@ -12,7 +12,7 @@ jobs:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
 
     env:
-      MAIN_FILE: "src/main.py"
+      MAIN_FILE: "src/orlydl.py"
 
     steps:
       - name: Checkout code
