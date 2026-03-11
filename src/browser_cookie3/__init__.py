@@ -317,6 +317,15 @@ def _expand_paths_impl(paths: list, os_name: str):
             # but using generator can be useful if we plan to parse all `Cookies` files later.
 
 
+def _get_os_name():
+    """Returns the name of the operating system: 'windows', 'osx', or 'linux'."""
+    if sys.platform == "win32":
+        return "windows"
+    if sys.platform == "darwin":
+        return "osx"
+    return "linux"
+
+
 def _expand_paths(paths: list, os_name: str):
     return next(_expand_paths_impl(paths, os_name), None)
 
@@ -602,14 +611,18 @@ class _DatabaseConnetion:
             return con
 
     def get_connection(self):
+        """Attempts multiple connection methods and returns the first successful connection."""
         if self.__connection:
             return self.__connection
         for method in self.__methods:
-            con = method()
-            if con is not None:
-                self.__connection = con
-                return con
-        raise BrowserCookieError("Unable to read database file")
+            try:
+                con = method()
+                if con is not None:
+                    self.__connection = con
+                    return con
+            except Exception:
+                continue
+        return None
 
     def cursor(self):
         return self.connection().cursor()
@@ -653,13 +666,14 @@ class ChromiumBased:
         osx_key_user=None,
     ):
 
-        if sys.platform == "darwin":
+        os_name = _get_os_name()
+        if os_name == "osx":
             password = _get_osx_keychain_password(osx_key_service, osx_key_user)
             iterations = 1003  # number of pbkdf2 iterations on mac
             self.v10_key = PBKDF2(password, self.salt, self.length, iterations)
-            cookie_file = self.cookie_file or _expand_paths(osx_cookies, "osx")
+            cookie_file = self.cookie_file or _expand_paths(osx_cookies, os_name)
 
-        elif sys.platform.startswith("linux") or "bsd" in sys.platform.lower():
+        elif os_name == "linux":
             password = _LinuxPasswordManager(USE_DBUS_LINUX).get_password(os_crypt_name)
             iterations = 1
             self.v10_key = PBKDF2(
@@ -672,10 +686,10 @@ class ChromiumBased:
             # After the bug was fixed, old cookies are still encrypted with an empty key
             self.v11_empty_key = PBKDF2(b"", self.salt, self.length, iterations)
 
-            cookie_file = self.cookie_file or _expand_paths(linux_cookies, "linux")
+            cookie_file = self.cookie_file or _expand_paths(linux_cookies, os_name)
 
-        elif sys.platform == "win32":
-            key_file = self.key_file or _expand_paths(windows_keys, "windows")
+        elif os_name == "windows":
+            key_file = self.key_file or _expand_paths(windows_keys, os_name)
 
             if key_file:
                 with open(key_file, "rb") as f:
@@ -749,7 +763,7 @@ class ChromiumBased:
                 if self.browser.lower() == "chrome" and _windows_group_policy_path():
                     cookie_file = _windows_group_policy_path()
                 else:
-                    cookie_file = _expand_paths(windows_cookies, "windows")
+                    cookie_file = _expand_paths(windows_cookies, os_name)
 
         else:
             raise BrowserCookieError(
@@ -771,6 +785,8 @@ class ChromiumBased:
         cj = http.cookiejar.CookieJar()
 
         with _DatabaseConnetion(self.cookie_file) as con:
+            if con is None:
+                return cj
             con.text_factory = _text_factory
             cur = con.cursor()
             has_integrity_check_for_cookie_domain = (
@@ -1033,6 +1049,18 @@ class Arc(ChromiumBased):
                     "~/Library/Application Support/Arc/User Data/Profile */Cookies",
                 ],
                 channel=[""],
+            ),
+            "windows_cookies": _genarate_win_paths_chromium(
+                [
+                    "Arc\\User Data\\Default\\Cookies",
+                    "Arc\\User Data\\Default\\Network\\Cookies",
+                    "Arc\\User Data\\Profile *\\Cookies",
+                    "Arc\\User Data\\Profile *\\Network\\Cookies",
+                ],
+                channel=[""],
+            ),
+            "windows_keys": _genarate_win_paths_chromium(
+                "Arc\\User Data\\Local State", channel=[""]
             ),
             "os_crypt_name": "chrome",
             "osx_key_service": "Arc Safe Storage",
@@ -1373,11 +1401,12 @@ class FirefoxBased:
     ):
         cookie_files = []
 
-        if sys.platform == "darwin":
+        os_name = _get_os_name()
+        if os_name == "osx":
             user_data_path = self.__expand_and_check_path(osx_data_dirs)
-        elif sys.platform.startswith("linux") or "bsd" in sys.platform.lower():
+        elif os_name == "linux":
             user_data_path = self.__expand_and_check_path(linux_data_dirs)
-        elif sys.platform == "win32":
+        elif os_name == "windows":
             user_data_path = self.__expand_and_check_path(windows_data_dirs)
         else:
             raise BrowserCookieError("Unsupported operating system: " + sys.platform)
@@ -1529,7 +1558,7 @@ class Safari:
             self.__buffer.close()
 
     def __open_file(self, cookie_file):
-        cookie_file = cookie_file or _expand_paths(self.safari_cookies, "osx")
+        cookie_file = cookie_file or _expand_paths(self.safari_cookies, _get_os_name())
         if not cookie_file:
             raise BrowserCookieError("Can not find Safari cookie file")
         self.__buffer = open(cookie_file, "rb")
@@ -1640,7 +1669,7 @@ class Lynx:
     ]
 
     def __init__(self, cookie_file=None, domain_name=""):
-        self.cookie_file = _expand_paths(cookie_file or self.lynx_cookies, "linux")
+        self.cookie_file = _expand_paths(cookie_file or self.lynx_cookies, _get_os_name())
         self.domain_name = domain_name
 
     def load(self):
@@ -1676,7 +1705,7 @@ class W3m:
     w3m_cookies = ["~/.w3m/cookie"]
 
     def __init__(self, cookie_file=None, domain_name=""):
-        self.cookie_file = _expand_paths(cookie_file or self.w3m_cookies, "linux")
+        self.cookie_file = _expand_paths(cookie_file or self.w3m_cookies, _get_os_name())
         self.domain_name = domain_name
 
     def load(self):
@@ -1907,11 +1936,15 @@ def load(
         fns = [BROWSERS[b] if isinstance(b, str) else b for b in browsers]
 
     cj = http.cookiejar.CookieJar()
+    # Iterate over all browser loading functions and gather cookies.
+    # Each function is wrapped in a try-except block to prevent a single browser failure
+    # from crashing the entire loading process.
     for cookie_fn in fns:
         try:
             for cookie in cookie_fn(domain_name=domain_name):
                 cj.set_cookie(cookie)
-        except BrowserCookieError:
+        except Exception:
+            # Skip browsers that fail to load (e.g. locked database, missing files)
             pass
     return cj
 
