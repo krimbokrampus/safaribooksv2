@@ -10,7 +10,7 @@
 
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension – credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 
-By default, it will grab your cookies using your default browser. Make sure you are logged-in and have an active Oreilly subscription. Firefox-based browsers may not work, if that is the case: move the Firefox-based browser's data directory[^2] and login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy).
+By default, it will grab your cookies using your default browser. Make sure you are logged-in and have an active Oreilly subscription. Firefox-based browsers may not work, if that is the case: login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy) and specify the browsers name via ```-b/--browser```.
 
 > [!IMPORTANT]
 > ***Obviously – it should go without saying – you should support Oreilly, if you have the means. They graciously provide the books from their catalogue, for which I am certainly thankful. Thanks, Oreilly!***
