@@ -20,12 +20,25 @@ By default, it will grab your cookies using your default browser. Firefox-based 
 ## Installing
 There are pre-release binaries in releases. Grab the one for your respective OS. Check below for a more direct approach.
 
+### Running
+Linux/MacOS
+```bash
+./main <BOOKID>
+```
+<br>Windows
+```powershell
+.\main.exe <BOOKID>
+```
+
 ## Running Directly
 ### **Requires Python >=3.14**
 Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) or [poetry](https://python-poetry.org/docs/#installation).
 
 > [!NOTE] 
 > These setup commands have been tested for Linux.
+
+> [!WARNING] 
+> If you are using Linux, you will need the following packages: **python3-dev**, **libglib2.0-dev**, and **libdbus-1-dev**. These are Ubuntu-specific, you can figure out the ones you need for your distro [here](https://pkgs.org).
 
 ### Using Poetry:
 ```bash
@@ -51,11 +64,17 @@ uv run src/main.py <BOOKID>
 
 ## Building Binaries
 
-Make sure pip is in your ```$PATH```. If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
+Make sure pip is in your ```$PATH```.<br>
+If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
 
 ```bash
 pip install pyinstaller
 pyinstaller src/main.py
+```
+
+Or using uv, for convenience:
+```bash
+uv run pyinstaller main.spec
 ```
 
 The binary will be available in ```dist/```.
