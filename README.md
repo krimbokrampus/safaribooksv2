@@ -5,16 +5,17 @@
 > [!NOTE] 
 > PRs are welcome! If the recent Safaribooks PRs get merged, I'll defunct this repo. It won't be archived since it still works for PDF-converted EPUBs[^1], whereas [Safaribooks does not](https://github.com/lorenzodifuccia/safaribooks/issues/296).
 
-> [!NOTE] 
+> [!IMPORTANT] 
 > I recommend running calibre's ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF-converted, so watch out for that.
 
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension – credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 
 By default, it will grab your cookies using your default browser. Firefox-based browsers may not work, if that is the case: move the Firefox-based browser's data directory[^2] and login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy). Make sure you are logged-in and have an active Oreilly subscription.
 
-***Obviously – it should go without saying – you should support Oreilly, if you have the means. They graciously provide the books from their catalogue, for which I am certainly thankful. Thanks, Oreilly!***
+> [!IMPORTANT]
+> ***Obviously – it should go without saying – you should support Oreilly, if you have the means. They graciously provide the books from their catalogue, for which I am certainly thankful. Thanks, Oreilly!***
 
-> [!NOTE]
+> [!IMPORTANT]
 > **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/08/26.**
 
 ## Installing
@@ -37,30 +38,54 @@ Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) o
 > [!NOTE] 
 > These setup commands have been tested for Linux.
 
-> [!WARNING] 
+> [!IMPORTANT] 
 > If you are using Linux, you will need the following packages: **python3-dev**, **libglib2.0-dev**, and **libdbus-1-dev**. These are Ubuntu-specific, you can figure out the ones you need for your distro [here](https://pkgs.org).
 
-### Using Poetry:
-```bash
+### Start:
+```
 git clone ...
 cd safaribooksv2
-poetry install
-poetry run src/main.py <BOOKID>
 ```
 
-#### Updating dependencies:
+### Running Using Python Directly:
 ```bash
-poetry update
+pip install -r requirements.txt
+python src/main.py <BOOKID>
 ```
 
-### Using uv:
+### Running Using venv:
 ```bash
-git clone ...
-cd safaribooksv2
+python -m venv .venv
+source .venv/bin/activate # whatever shell you have, or call the cmds directly
+pip install -r requirements.txt
+python src/main.py <BOOKID>
+```
+
+### Running Using uv:
+```bash
 uv python install 3.14
 uv sync
 uv run src/main.py <BOOKID>
 ```
+
+### Running Using Poetry (recommended):
+```bash
+poetry install
+poetry run src/main.py <BOOKID>
+```
+
+#### Updating Dependencies:
+```bash
+poetry update
+```
+
+If you update the dependencies and plan on contributing:
+```bash
+# If you are on Linux and it fails, install it from your package manager.
+poetry self add poetry-plugin-export
+poetry export --output requirements.txt --without-hashes
+```
+This ensures the requirements are updated for those who don't use Poetry.
 
 ## Building Binaries
 Make sure pip is in your ```$PATH```[^3].
