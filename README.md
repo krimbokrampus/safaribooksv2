@@ -18,7 +18,7 @@ By default, it will grab your cookies using your default browser. Firefox-based 
 > [!IMPORTANT]
 > **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/11/26.**
 
-## Installing
+## Installation
 There are pre-release binaries in releases. Grab the one for your respective OS. Check below for a more direct approach.
 
 ### Running
@@ -47,7 +47,7 @@ options:
 
 ## Running Directly
 ### **Requires Python >=3.14**
-Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) or [poetry](https://python-poetry.org/docs/#installation).
+Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) or [Poetry](https://python-poetry.org/docs/#installation).
 
 > [!NOTE] 
 > These setup commands have been tested for Linux.
@@ -61,55 +61,24 @@ git clone ...
 cd safaribooksv2
 ```
 
-### Running Using Python Directly:
+### Using Python Directly:
 ```bash
 pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
-### Running Using uv (recommended):
+### Using uv (recommended):
 ```bash
 uv python install 3.14
 uv sync
 uv run src/orlydl.py <BOOKID>
 ```
 
-#### Updating Dependencies:
-```bash
-uv lock --upgrade
-```
-
-Manually updating specific packages:
-```
-uv pip list --outdated
-uv lock --upgrade-package <package>
-```
-uv does not have automatic dependency management for ```pyproject.toml```, [yet](https://github.com/astral-sh/uv/pull/13934).
-
-If you update the dependencies and plan on contributing:
-```bash
-uv export --format requirements.txt -o requirements.txt --no-hashes
-```
-This ensures the requirements are updated for those who don't use uv.
-
-### Running Using Poetry:
+### Using Poetry:
 ```bash
 poetry install
 poetry run src/orlydl.py <BOOKID>
 ```
-
-#### Updating Dependencies:
-```bash
-poetry update
-```
-
-If you update the dependencies and plan on contributing:
-```bash
-# If you are on Linux and it fails, install it from your package manager.
-poetry self add poetry-plugin-export
-poetry export --output requirements.txt --without-hashes
-```
-This ensures the requirements are updated for those who don't use Poetry.
 
 ### Running Using venv:
 ```bash
@@ -119,20 +88,55 @@ pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
+### Updating Dependencies:
+
+#### **uv**
+```bash
+uv lock --upgrade
+```
+
+Manually updating specific packages for uv:
+```
+uv pip list --outdated
+uv lock --upgrade-package <package>
+```
+uv does not have automatic dependency management for ```pyproject.toml```, [yet](https://github.com/astral-sh/uv/pull/13934).
+
+#### **Poetry**
+```bash
+poetry update
+```
+
+### If Dependencies Are Updated and You Plan on Contributing
+
+#### **uv**
+```bash
+uv export --format requirements.txt -o requirements.txt --no-hashes
+```
+
+#### **Poetry**
+```bash
+# If you are on Linux and it fails, install it from your package manager.
+poetry self add poetry-plugin-export
+poetry export --output requirements.txt --without-hashes
+```
+
+This ensures the requirements are updated for those who don't use Poetry or uv.
+
 ## Building Binaries
 Make sure pip is in your ```$PATH```[^3].
 
 ```bash
 pip install pyinstaller
-pyinstaller src/main.py
+pyinstaller src/orlydl.py
 ```
 
 Or using uv, for convenience:
 ```bash
-uv run pyinstaller orlydl.spec
+uv run pyinstaller src/orlydl.spec
 ```
 
-The binary will be available in ```dist/```.
+The binary will be available in ```$PWD/dist/orlydl```.
 
 ## Contributing
 If you know Python – since it's relatively easy to learn – I encourage you to contribute. This repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks currently isn't. 
