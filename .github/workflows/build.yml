@@ -26,7 +26,7 @@ jobs:
       - name: Install Ubuntu-specific dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt install libdbus-1-dev python3-dev
+          sudo apt install libdbus-1-dev python3-dev libglib2.0-dev
         working-directory: ./
 
       - name: Install Python dependencies
