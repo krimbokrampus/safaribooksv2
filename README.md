@@ -24,11 +24,27 @@ There are pre-release binaries in releases. Grab the one for your respective OS.
 ### Running
 Linux/MacOS
 ```bash
-./main <BOOKID>
+./orlydl <BOOKID>
 ```
 <br>Windows
 ```powershell
-.\main.exe <BOOKID>
+.\orlydl.exe <BOOKID>
+```
+
+### Argument Help
+```
+usage: orlydl [-h] [--verbose] [--sleep] bookid
+
+Downloads EPUBs from Oreilly.
+
+positional arguments:
+  bookid      Book's ID that you would like to download. You can search the book
+              metadata dump for books.
+
+options:
+  -h, --help  show this help message and exit
+  --verbose   Prints information about the files as they are requested.
+  --sleep     Sleeps when requesting files to prevent IP from being flagged.
 ```
 
 ## Running Directly
@@ -50,7 +66,7 @@ cd safaribooksv2
 ### Running Using Python Directly:
 ```bash
 pip install -r requirements.txt
-python src/main.py <BOOKID>
+python src/orlydl.py <BOOKID>
 ```
 
 ### Running Using venv:
@@ -58,20 +74,20 @@ python src/main.py <BOOKID>
 python -m venv .venv
 source .venv/bin/activate # whatever shell you have, or call the cmds directly
 pip install -r requirements.txt
-python src/main.py <BOOKID>
+python src/orlydl.py <BOOKID>
 ```
 
 ### Running Using uv:
 ```bash
 uv python install 3.14
 uv sync
-uv run src/main.py <BOOKID>
+uv run src/orlydl.py <BOOKID>
 ```
 
 ### Running Using Poetry (recommended[^4]):
 ```bash
 poetry install
-poetry run src/main.py <BOOKID>
+poetry run src/orlydl.py <BOOKID>
 ```
 
 #### Updating Dependencies:
