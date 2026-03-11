@@ -21,3 +21,6 @@ dependencies = [
     "dbus-python (>=1.4.0,<2.0.0) ; sys_platform == \"bsd\" or sys_platform == \"linux\"",
     "jeepney (>=0.9.0,<0.10.0) ; sys_platform == \"bsd\" or sys_platform == \"linux\"",
 ]
+
+[tool.poetry]
+packages = [{include = "src"}]
