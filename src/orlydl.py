@@ -1,5 +1,6 @@
 import argparse
 import gc
+import json
 import sys
 from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
@@ -29,6 +30,14 @@ if __name__ == "__main__":
         nargs="?",
         type=Path,
         help="File list of identifiers, separated by newlines.",
+    )
+    args.add_argument(
+        "-c",
+        "--cookies",
+        dest="cookie_file",
+        nargs="?",
+        type=Path,
+        help="Path to JSON containing your cookies.",
     )
     args.add_argument(
         "-o",
@@ -89,7 +98,11 @@ if __name__ == "__main__":
     OUT_DIR.mkdir(exist_ok=True) if not args.output_dir else args.output_dir.mkdir(
         exist_ok=True
     )
-    CACHE.cookies.update(get_oreilly_cookies(args.browsers))
+    CACHE.cookies.update(
+        get_oreilly_cookies(args.browsers)
+        if not args.cookie_file
+        else json.load(args.cookie_file.open())
+    )
 
     def parse_iden(x: str, args: argparse.Namespace):
         parser = OreillyEpubParser(x, args)
