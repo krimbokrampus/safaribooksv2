@@ -80,7 +80,7 @@ poetry install
 poetry run src/orlydl.py <BOOKID>
 ```
 
-### Running Using venv:
+### Using venv:
 ```bash
 python -m venv .venv
 source .venv/bin/activate # whatever shell you have, or call the cmds directly
