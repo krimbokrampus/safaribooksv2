@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 from requests import Response
 
-import browser_cookie3 as browser_cookie3
+import browser_cookie3
 from constants import CACHE
 
 
