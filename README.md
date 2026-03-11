@@ -10,7 +10,7 @@
 
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension – credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 
-By default, it will grab your cookies using your default browser. Make sure you are logged-in and have an active Oreilly subscription. Firefox-based browsers may not work, if that is the case: login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy) and specify the browsers name via ```-b/--browser```. If that doesn't work, as a last resort, use the following script in your dev console (on Oreilly's homepage) to export a ```cookies.json``` and pass it via ```-c/--cookies```.
+By default, it will grab your cookies using your default browser. Make sure you are logged-in and have an active Oreilly subscription. Firefox-based browsers may not work, if that is the case: login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy) and specify the browsers name via ```-b/--browser```. If that doesn't work, as a last resort, use the following script in your dev console (on Oreilly's homepage in Chrome) to export a ```cookies.json``` and pass it via ```-c/--cookies```.
 
 ```JavaScript
 const cookies = document.cookie.split(';').reduce((acc, cookie) => {
@@ -48,7 +48,7 @@ Linux/MacOS
 .\orlydl.exe <BOOKID>
 ```
 
-### Usage
+#### Usage
 ```
 usage: orlydl [-h] [-i IDEN [IDEN ...]] [-m [FILE_LIST]] [-c [COOKIE_FILE]]
               [-o [OUTPUT_DIR]] [-t THREADS_NUM] [-f FILE_THREADS_NUM] [-b BROWSER]
@@ -69,10 +69,10 @@ options:
                         Books output directory.
   -t, --threads-num THREADS_NUM
                         Maximum concurrent books to download. Recommended: 4, Max:
-                        8-6.
+                        6-8.
   -f, --file-threads-num FILE_THREADS_NUM
                         Maximum concurrent number of files to download. Recommended:
-                        3, Max: 8-6.
+                        3, Max: 6-8.
   -b, --browser BROWSER
                         Browser(s) to load cookies from (default: all).
   -v, --verbose         Prints information about the files as they are requested.
@@ -104,7 +104,7 @@ python src/orlydl.py <BOOKID>
 
 ### Using uv (recommended):
 ```bash
-uv python install 3.14
+uv python install 3.14 # if it isn't already installed
 uv sync
 uv run src/orlydl.py <BOOKID>
 ```
@@ -159,15 +159,13 @@ poetry export --output requirements.txt --without-hashes
 This ensures the requirements are updated for those who don't use Poetry or uv.
 
 ## Building Binaries
-Make sure pip is in your ```$PATH```[^2].
-
 ```bash
 pyinstaller src/orlydl.py
 ```
 
 Or using uv, for convenience:
 ```bash
-uv run pyinstaller src/orlydl.spec
+uv run pyinstaller orlydl.spec
 ```
 
 The binary will be available in ```$PWD/dist/orlydl```.
@@ -176,14 +174,13 @@ The binary will be available in ```$PWD/dist/orlydl```.
 If you know Python – since it's relatively easy to learn – I encourage you to contribute. This repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks currently isn't. 
 
 ### Why stay with Python?
-The answer is simple: to allow more people to help develop the tool. That was the purpose after seeing the stacked amount of PRs in Safaribooks.
+The answer is simple: to allow more people to help develop the tool. That has been the purpose after seeing the stacked amount of PRs in Safaribooks.
 
 ## Credits/Licenses
-This repo contains the following third-party library (mostly because development died off and it has a bug on Linux).
+This repo contains the following third-party library (mostly because development died off and it had a bug on Linux).
 - [browser_cookie3](https://github.com/borisbabic/browser_cookie3), licensed under [LGPL-3.0](LICENSES/browser_cookie3.LICENSE)
 
 ## Project Licensing
 This entire work is in the Public Domain, I could care less with what you do to the code.
 
 [^1]: Somewhat, see [here](https://github.com/krimbokrampus/safaribooksv2/issues/3)
-[^2]: If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
