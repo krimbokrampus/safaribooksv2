@@ -63,9 +63,7 @@ uv run src/main.py <BOOKID>
 ```
 
 ## Building Binaries
-
-Make sure pip is in your ```$PATH```.<br>
-If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
+Make sure pip is in your ```$PATH```[^3].
 
 ```bash
 pip install pyinstaller
@@ -94,3 +92,4 @@ This entire work is in the Public Domain, I could care less with what you do to 
 
 [^1]: Somewhat, see [here](https://github.com/krimbokrampus/safaribooksv2/issues/3)
 [^2]: It should contain your profile directory. It's located on ```about:profiles``` in Firefox, under ```Root Directory```. Move/Backup the entire parent directory. If possible, change where it's located, if it's the default directory. Moving it should suffice, though.
+[^3]: If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
