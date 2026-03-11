@@ -50,22 +50,29 @@ Linux/MacOS
 
 ### Argument Help
 ```
-usage: orlydl [-h] [-i IDEN [IDEN ...]] [-m [FILE_LIST]] [-o [OUTPUT_DIR]] [-t THREADS_NUM] [-f FILE_THREADS_NUM] [-b BROWSER] [-v] [-s] [-k]
+usage: orlydl [-h] [-i IDEN [IDEN ...]] [-m [FILE_LIST]] [-c [COOKIE_FILE]]
+              [-o [OUTPUT_DIR]] [-t THREADS_NUM] [-f FILE_THREADS_NUM] [-b BROWSER]
+              [-v] [-s] [-k]
 
 Downloads EPUBs from Oreilly.
 
 options:
   -h, --help            show this help message and exit
   -i, --iden IDEN [IDEN ...]
-                        Book's ID that you would like to download, can be multiple. You can search the book metadata dump for books.
+                        Book's ID that you would like to download, can be multiple.
+                        You can search the book metadata dump for books.
   -m, --batch [FILE_LIST]
                         File list of identifiers, separated by newlines.
+  -c, --cookies [COOKIE_FILE]
+                        Path to JSON containing your cookies.
   -o, --output [OUTPUT_DIR]
                         Books output directory.
   -t, --threads-num THREADS_NUM
-                        Maximum concurrent books to download. Recommended: 4, Max: 8-6.
+                        Maximum concurrent books to download. Recommended: 4, Max:
+                        8-6.
   -f, --file-threads-num FILE_THREADS_NUM
-                        Maximum concurrent number of files to download. Recommended: 3, Max: 8-6.
+                        Maximum concurrent number of files to download. Recommended:
+                        3, Max: 8-6.
   -b, --browser BROWSER
                         Browser(s) to load cookies from (default: all).
   -v, --verbose         Prints information about the files as they are requested.
