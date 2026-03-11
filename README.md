@@ -48,7 +48,7 @@ Linux/MacOS
 .\orlydl.exe <BOOKID>
 ```
 
-### Argument Help
+### Usage
 ```
 usage: orlydl [-h] [-i IDEN [IDEN ...]] [-m [FILE_LIST]] [-c [COOKIE_FILE]]
               [-o [OUTPUT_DIR]] [-t THREADS_NUM] [-f FILE_THREADS_NUM] [-b BROWSER]
@@ -159,7 +159,7 @@ poetry export --output requirements.txt --without-hashes
 This ensures the requirements are updated for those who don't use Poetry or uv.
 
 ## Building Binaries
-Make sure pip is in your ```$PATH```[^3].
+Make sure pip is in your ```$PATH```[^2].
 
 ```bash
 pip install pyinstaller
