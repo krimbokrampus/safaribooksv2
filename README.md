@@ -129,7 +129,7 @@ pyinstaller src/main.py
 
 Or using uv, for convenience:
 ```bash
-uv run pyinstaller main.spec
+uv run pyinstaller orlydl.spec
 ```
 
 The binary will be available in ```dist/```.

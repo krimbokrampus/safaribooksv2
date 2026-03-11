@@ -5,7 +5,7 @@ import sys
 import time
 from argparse import Namespace
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from functools import reduce
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -239,8 +239,19 @@ class OreillyEpubParser:
             )
 
         with ThreadPoolExecutor(3) as threads:
-            [threads.submit(self.push_buffer, file) for file in self.file_list]
-            threads.shutdown(wait=True)
+            futures = []
+
+            [
+                futures.append(threads.submit(self.push_buffer, file))
+                for file in self.file_list
+            ]
+            done = wait(futures, return_when="FIRST_EXCEPTION")
+
+            if done.not_done:
+                print("Items failed to download, exiting")
+                sys.exit()
+
+            threads.shutdown()
 
         self.file_contents.append(
             ContentBuffer(
