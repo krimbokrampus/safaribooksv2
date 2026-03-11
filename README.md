@@ -162,7 +162,6 @@ This ensures the requirements are updated for those who don't use Poetry or uv.
 Make sure pip is in your ```$PATH```[^2].
 
 ```bash
-pip install pyinstaller
 pyinstaller src/orlydl.py
 ```
 
