@@ -13,7 +13,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from lxml.html import HtmlElement
 from pyquery import PyQuery
 
-from src.constants import (
+from constants import (
     BOOK_JSON_URL,
     FILE_LIST_LIMIT_FORMATTED_URL,
     KINDLE_CSS,
@@ -21,7 +21,7 @@ from src.constants import (
     OUT_DIR,
     XML_CONTENTS,
 )
-from src.utils import ContentBuffer, escape_dirname, fetch, format_chapter
+from utils import ContentBuffer, escape_dirname, fetch, format_chapter
 
 
 class OreillyEpubParser:

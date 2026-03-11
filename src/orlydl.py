@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 
 import browser_cookie3
-from src.constants import CACHE, OUT_DIR
-from src.epub import OreillyEpubParser
-from src.utils import get_oreilly_cookies
+from constants import CACHE, OUT_DIR
+from epub import OreillyEpubParser
+from utils import get_oreilly_cookies
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser(

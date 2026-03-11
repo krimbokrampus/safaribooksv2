@@ -5,8 +5,8 @@ from typing import NamedTuple
 
 from requests import Response
 
-import src.browser_cookie3 as browser_cookie3
-from src.constants import CACHE
+import browser_cookie3 as browser_cookie3
+from constants import CACHE
 
 
 def format_chapter(book_json, formatted_stylesheets, chapter_content) -> str:
