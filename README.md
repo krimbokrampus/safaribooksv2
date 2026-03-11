@@ -33,8 +33,6 @@ Linux/MacOS
 
 ### Argument Help
 ```
-usage: orlydl [-h] [--verbose] [--sleep] bookid
-
 Downloads EPUBs from Oreilly.
 
 positional arguments:
@@ -69,22 +67,32 @@ pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
-### Running Using venv:
-```bash
-python -m venv .venv
-source .venv/bin/activate # whatever shell you have, or call the cmds directly
-pip install -r requirements.txt
-python src/orlydl.py <BOOKID>
-```
-
-### Running Using uv:
+### Running Using uv (recommended):
 ```bash
 uv python install 3.14
 uv sync
 uv run src/orlydl.py <BOOKID>
 ```
 
-### Running Using Poetry (recommended[^4]):
+#### Updating Dependencies:
+```bash
+uv lock --upgrade
+```
+
+Manually updating specific packages:
+```
+uv pip list --outdated
+uv lock --upgrade-package <package>
+```
+uv does not have automatic dependency management for ```pyproject.toml```, [yet](https://github.com/astral-sh/uv/pull/13934).
+
+If you update the dependencies and plan on contributing:
+```bash
+uv export --format requirements.txt -o requirements.txt --no-hashes
+```
+This ensures the requirements are updated for those who don't use uv.
+
+### Running Using Poetry:
 ```bash
 poetry install
 poetry run src/orlydl.py <BOOKID>
@@ -102,6 +110,14 @@ poetry self add poetry-plugin-export
 poetry export --output requirements.txt --without-hashes
 ```
 This ensures the requirements are updated for those who don't use Poetry.
+
+### Running Using venv:
+```bash
+python -m venv .venv
+source .venv/bin/activate # whatever shell you have, or call the cmds directly
+pip install -r requirements.txt
+python src/orlydl.py <BOOKID>
+```
 
 ## Building Binaries
 Make sure pip is in your ```$PATH```[^3].
@@ -134,4 +150,3 @@ This entire work is in the Public Domain, I could care less with what you do to 
 [^1]: Somewhat, see [here](https://github.com/krimbokrampus/safaribooksv2/issues/3)
 [^2]: It should contain your profile directory. It's located on ```about:profiles``` in Firefox, under ```Root Directory```. Move/Backup the entire parent directory. If possible, change where it's located, if it's the default directory. Moving it should suffice, though.
 [^3]: If it isn't: for Poetry, it should be located in ```$POETRY_VIRTUALENVS_PATH/safaribooksv2-{random-chars}-py3.14/bin``` and for uv, it should be in the project's ```.venv/bin``` directory.
-[^4]: When updating the dependencies and exporting the ```requirements.txt``` using uv, it fails to write the platform-specific dependencies. Poetry does not, that is why I recommend it. Other than that, uv would be my go-to.
