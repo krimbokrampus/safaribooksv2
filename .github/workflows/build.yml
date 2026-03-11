@@ -1,0 +1,45 @@
+name: Build Release Binary
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+
+    env:
+      MAIN_FILE: "src/main.py"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+        working-directory: ./
+
+      - name: Install PyInstaller
+        run: |
+          pip install pyinstaller
+        working-directory: ./
+
+      - name: Build binary
+        run: |
+          pyinstaller ${{ env.MAIN_FILE }}
+        working-directory: ./
+
+      - name: Create Artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: binary-${{ matrix.os }}
+          path: dist/

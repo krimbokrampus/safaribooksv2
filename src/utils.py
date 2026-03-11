@@ -3,9 +3,9 @@ import re
 import sys
 from typing import NamedTuple, Optional
 
-import browser_cookie3
 from requests import Response
 
+import browser_cookie3
 from constants import CACHE
 
 
@@ -46,43 +46,23 @@ def fetch(url: str) -> Optional[Response]:
 # sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
 def get_oreilly_cookies() -> dict:
     domains = [
+        # firefox-specific domains:
+        "api.oreilly.com",
+        ".oreilly.com",
+        ".learning.oreilly.com",
+        ".www.oreilly.com",
+        # chromium-specific domains
         "learning.oreilly.com",
         "www.oreilly.com",
-        ".oreilly.com",
-        "oreilly.com",
-        "api.oreilly.com",
     ]
 
     cookies = {}
-    browser = None
 
-    if "win" not in sys.platform:
-        try:
-            try:
-                _ = browser_cookie3.chrome()
-                browser = "chrome"
-            except browser_cookie3.BrowserCookieError:
-                print("failed to locate chrome cookies")
-                _ = browser_cookie3.brave()
-                browser = "brave"
-        except browser_cookie3.BrowserCookieError:
-            print("failed to locate brave cookies")
-            browser = "chromium"
-
-    def scrape_cookie(domain: str):
-        if "win" in sys.platform:
-            cj = browser_cookie3.load(domain_name=domain)  # func broke on linux
-        else:
-            match browser:
-                case "chrome":
-                    cj = browser_cookie3.chrome(domain_name=domain)
-                case "brave":
-                    cj = browser_cookie3.brave(domain_name=domain)
-                case "chromium":
-                    cj = browser_cookie3.chromium(domain_name=domain)
+    def gather_cookies(domain: str):
+        cj = browser_cookie3.load(domain_name=domain)
         list(map(lambda c: cookies.update({c.name: c.value}), cj))
 
-    list(map(scrape_cookie, domains))
+    list(map(gather_cookies, domains))
     return cookies
 
 
