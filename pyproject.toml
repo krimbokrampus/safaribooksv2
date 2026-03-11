@@ -1,9 +1,9 @@
 [project]
 name = "safaribooksv2"
 version = "1.0.0"
-description = "Downloads EPUBs from Safaribooksv2"
+description = "Downloads EPUBs from Oreilly"
 authors = [
-    {name = "Seppel Kuhn",email = "krimbokrampus@tutamail.com"}
+    {name = "Seppel Kuhn", email = "krimbokrampus@tutamail.com"}
 ]
 license = "Unlicense"
 license-files = [
