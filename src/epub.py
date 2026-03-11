@@ -7,30 +7,31 @@ from argparse import Namespace
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, wait
 from functools import reduce
+from typing import Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from lxml.html import HtmlElement
 from pyquery import PyQuery
 
-from constants import (
+from src.constants import (
     BOOK_JSON_URL,
     FILE_LIST_LIMIT_FORMATTED_URL,
     KINDLE_CSS,
     LIMIT_FORMATTED_URL,
-    OUT_PATH,
+    OUT_DIR,
     XML_CONTENTS,
 )
-from utils import ContentBuffer, escape_dirname, fetch, format_chapter
+from src.utils import ContentBuffer, escape_dirname, fetch, format_chapter
 
 
 class OreillyEpubParser:
-    def __init__(self, args: Namespace):
+    def __init__(self, iden: str, args: Namespace):
+        self.id: str = iden
         self.args: Namespace = args
-        self.id: str = self.args.bookid
         self.relative_stylesheets: list = []
         self.book_info_json: dict = self.get_book_json()
         self.file_list: list = self.get_file_list()
-        self.file_contents: deque = deque()
+        self.file_contents: deque[ContentBuffer] = deque()
         self.is_pdf_converted: bool = False
 
         print(f"Downloading {self.book_info_json['title']}")
@@ -196,6 +197,7 @@ class OreillyEpubParser:
             print(file)
 
         if file["kind"] == "chapter":
+            self.total_chapters -= 1
             return self.parse_and_replace_html(
                 fetch(file["url"]).content.decode(), file
             )
@@ -204,15 +206,18 @@ class OreillyEpubParser:
 
         return fetch(file["url"]).content
 
-    def zip_epub_contents(self, book_contents: deque) -> None:
+    def zip_epub_contents(self, book_contents: deque[ContentBuffer]) -> None:
         with ZipFile(
             (
-                OUT_PATH
+                (OUT_DIR if not self.args.output_dir else self.args.output_dir)
                 / "{0}.epub".format(escape_dirname(self.book_info_json["title"]))
             ),
             "w",
             compression=ZIP_DEFLATED,
         ) as handle:
+            if not book_contents:  # to shut up ty
+                return
+
             list(
                 map(
                     lambda x: handle.writestr(
@@ -225,7 +230,7 @@ class OreillyEpubParser:
 
         print(f"Finished {self.book_info_json['title']}")
 
-    def setup_file_contents(self) -> deque:
+    def setup_file_contents(self) -> deque[ContentBuffer]:
         self.collect_stylesheets()
 
         if list(filter(lambda x: "pdf2htmlEX" in x["filename"], self.file_list)):
@@ -238,18 +243,14 @@ class OreillyEpubParser:
                 )
             )
 
-        with ThreadPoolExecutor(3) as threads:
+        with ThreadPoolExecutor(self.args.file_threads_num) as threads:
             futures = []
 
             [
                 futures.append(threads.submit(self.push_buffer, file))
                 for file in self.file_list
             ]
-            done = wait(futures, return_when="FIRST_EXCEPTION")
-
-            if done.not_done:
-                print("Items failed to download, exiting")
-                sys.exit()
+            wait(futures, return_when="FIRST_EXCEPTION")
 
             threads.shutdown()
 

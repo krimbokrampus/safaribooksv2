@@ -1,12 +1,12 @@
 import html
 import re
 import sys
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from requests import Response
 
-import browser_cookie3
-from constants import CACHE
+import src.browser_cookie3 as browser_cookie3
+from src.constants import CACHE
 
 
 def format_chapter(book_json, formatted_stylesheets, chapter_content) -> str:
@@ -26,15 +26,15 @@ def escape_dirname(x) -> str:
     )
 
 
-def fetch(url: str) -> Optional[Response]:
+def fetch(url: str) -> Response:
     res = None
 
     while not res:
         try:
             res = CACHE.get(url)
 
-            if res.status_code == 404:
-                return None
+            if res.status_code == 404 or res.status_code == 403:
+                sys.exit()
             elif not res.status_code == 200:
                 raise Exception
         except Exception:
@@ -44,14 +44,14 @@ def fetch(url: str) -> Optional[Response]:
 
 
 # sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
-def get_oreilly_cookies() -> dict:
+def get_oreilly_cookies(browsers) -> dict:
     domains = [
         # firefox-specific domains:
         "api.oreilly.com",
         ".oreilly.com",
         ".learning.oreilly.com",
         ".www.oreilly.com",
-        # chromium-specific domains
+        # chromium-specific domains:
         "learning.oreilly.com",
         "www.oreilly.com",
     ]
@@ -59,7 +59,7 @@ def get_oreilly_cookies() -> dict:
     cookies = {}
 
     def gather_cookies(domain: str):
-        cj = browser_cookie3.load(domain_name=domain)
+        cj = browser_cookie3.load(browsers=browsers, domain_name=domain)
         list(map(lambda c: cookies.update({c.name: c.value}), cj))
 
     list(map(gather_cookies, domains))

@@ -1,6 +1,6 @@
 [project]
 name = "safaribooksv2"
-version = "1.0.0"
+version = "1.0.1"
 description = "Downloads EPUBs from Oreilly"
 authors = [
     {name = "Seppel Kuhn", email = "krimbokrampus@tutamail.com"}

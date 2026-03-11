@@ -48,10 +48,10 @@ if sys.platform == "win32":
 
 
 # external dependencies
-import lz4.block
-from Cryptodome.Cipher import AES, ChaCha20_Poly1305
-from Cryptodome.Protocol.KDF import PBKDF2
-from Cryptodome.Util.Padding import unpad
+import lz4.block  # noqa: E402
+from Cryptodome.Cipher import AES, ChaCha20_Poly1305  # noqa: E402
+from Cryptodome.Protocol.KDF import PBKDF2  # noqa: E402
+from Cryptodome.Util.Padding import unpad  # noqa: E402
 
 __doc__ = "Load browser cookies into a cookiejar"
 
@@ -90,7 +90,7 @@ def _is_admin():
     """Check if running as administrator on Windows"""
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except:
+    except Exception:
         return False
 
 
@@ -298,16 +298,16 @@ def _expand_paths_impl(paths: list, os_name: str):
     os_name = os_name.lower()
     assert os_name in ["windows", "osx", "linux"]
 
-    if paths is None:
+    if not paths:
         paths = []
 
     if not isinstance(paths, list):
         paths = [paths]
 
     if os_name == "windows":
-        paths = map(_expand_win_path, paths)
+        paths = list(map(_expand_win_path, paths))
     else:
-        paths = map(os.path.expanduser, paths)
+        paths = list(map(os.path.expanduser, paths))
 
     for path in paths:
         # glob will return results in arbitrary order. sorted() is use to make output predictable.
@@ -1872,11 +1872,21 @@ Useful for input validation and dynamic dispatch::
 """
 
 
+BROWSERS: Dict[str, Callable] = {fn.__name__: fn for fn in all_browsers}
+"""Mapping of browser name to its cookie-loader function.
+Useful for input validation and dynamic dispatch::
+    # Validate a user-supplied name
+    if name not in browser_cookie3.BROWSERS:
+        raise ValueError(f"Unknown browser: {name!r}")
+    # Dispatch by name
+    cj = browser_cookie3.BROWSERS[name](domain_name="example.com")
+"""
+
+
 def load(
     domain_name: str = "", browsers: Optional[Iterable[Union[str, Callable]]] = None
 ):
     """Try to load cookies from supported browsers and return combined cookiejar.
-
     Parameters
     ----------
     domain_name:
@@ -1885,13 +1895,12 @@ def load(
     browsers:
         Browsers to try. Each entry may be a name string (looked up in
         :data:`BROWSERS`) or a callable browser loader directly, e.g.::
-
             load(browsers=["firefox", "chrome"])
             load(browsers=["firefox", browser_cookie3.chrome])
-
         Defaults to ``None``, which tries all browsers in :data:`all_browsers`
         (existing behaviour).
     """
+
     if browsers is None:
         fns = all_browsers
     else:
