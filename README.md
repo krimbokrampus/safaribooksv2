@@ -10,7 +10,7 @@
 
 This is an Oreilly Downloader based on their v2 API. It was rewritten from the minified JS code in the [MyOnlineLearning Downloader](https://my-chrome-extensions.com/) extension – credits to the author for making it! I say this but some things are handled fundamentally different. The extension was more so used for a rudimentary understanding of how things work. I wrote this with 0 knowledge in both HTML and JavaScript (no offense but webdev is boring af). It seems to work for everything, if it doesn't work for you, please make an issue. AI was consulted for specific utilization of methods, NO CODE IS WRITTEN BY IT!
 
-By default, it will grab your cookies using your default browser. Firefox-based browsers may not work, if that is the case: move the Firefox-based browser's data directory[^2] and login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy). Make sure you are logged-in and have an active Oreilly subscription.
+By default, it will grab your cookies using your default browser. Make sure you are logged-in and have an active Oreilly subscription. Firefox-based browsers may not work, if that is the case: move the Firefox-based browser's data directory[^2] and login to Oreilly on any [supported Chromium-based browser](https://github.com/borisbabic/browser_cookie3#testing-dates--ddmmyy).
 
 > [!IMPORTANT]
 > ***Obviously – it should go without saying – you should support Oreilly, if you have the means. They graciously provide the books from their catalogue, for which I am certainly thankful. Thanks, Oreilly!***
@@ -18,8 +18,8 @@ By default, it will grab your cookies using your default browser. Firefox-based 
 > [!IMPORTANT]
 > **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/11/26.**
 
-## Installing
-There are pre-release binaries in releases. Grab the one for your respective OS. Check below for a more direct approach.
+## Installation
+There are binaries [here](https://github.com/krimbokrampus/safaribooksv2/releases/latest). Grab the one for your respective OS. Read below for a more direct approach.
 
 ### Running
 Linux/MacOS
@@ -58,7 +58,7 @@ options:
 
 ## Running Directly
 ### **Requires Python >=3.14**
-Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) or [poetry](https://python-poetry.org/docs/#installation).
+Make sure to have [uv](https://docs.astral.sh/uv/getting-started/installation) or [Poetry](https://python-poetry.org/docs/#installation).
 
 > [!NOTE] 
 > These setup commands have been tested for Linux.
@@ -72,57 +72,26 @@ git clone ...
 cd safaribooksv2
 ```
 
-### Running Using Python Directly:
+### Using Python Directly:
 ```bash
 pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
-### Running Using uv (recommended):
+### Using uv (recommended):
 ```bash
 uv python install 3.14
 uv sync
 uv run src/orlydl.py <BOOKID>
 ```
 
-#### Updating Dependencies:
-```bash
-uv lock --upgrade
-```
-
-Manually updating specific packages:
-```
-uv pip list --outdated
-uv lock --upgrade-package <package>
-```
-uv does not have automatic dependency management for ```pyproject.toml```, [yet](https://github.com/astral-sh/uv/pull/13934).
-
-If you update the dependencies and plan on contributing:
-```bash
-uv export --format requirements.txt -o requirements.txt --no-hashes
-```
-This ensures the requirements are updated for those who don't use uv.
-
-### Running Using Poetry:
+### Using Poetry:
 ```bash
 poetry install
 poetry run src/orlydl.py <BOOKID>
 ```
 
-#### Updating Dependencies:
-```bash
-poetry update
-```
-
-If you update the dependencies and plan on contributing:
-```bash
-# If you are on Linux and it fails, install it from your package manager.
-poetry self add poetry-plugin-export
-poetry export --output requirements.txt --without-hashes
-```
-This ensures the requirements are updated for those who don't use Poetry.
-
-### Running Using venv:
+### Using venv:
 ```bash
 python -m venv .venv
 source .venv/bin/activate # whatever shell you have, or call the cmds directly
@@ -130,20 +99,55 @@ pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
+### Updating Dependencies:
+
+#### **uv**
+```bash
+uv lock --upgrade
+```
+
+Manually updating specific packages for uv:
+```
+uv pip list --outdated
+uv lock --upgrade-package <package>
+```
+uv does not have automatic dependency management for ```pyproject.toml```, [yet](https://github.com/astral-sh/uv/pull/13934).
+
+#### **Poetry**
+```bash
+poetry update
+```
+
+### If Dependencies Are Updated and You Plan on Contributing
+
+#### **uv**
+```bash
+uv export --format requirements.txt -o requirements.txt --no-hashes
+```
+
+#### **Poetry**
+```bash
+# If you are on Linux and it fails, install it from your package manager.
+poetry self add poetry-plugin-export
+poetry export --output requirements.txt --without-hashes
+```
+
+This ensures the requirements are updated for those who don't use Poetry or uv.
+
 ## Building Binaries
 Make sure pip is in your ```$PATH```[^3].
 
 ```bash
 pip install pyinstaller
-pyinstaller src/main.py
+pyinstaller src/orlydl.py
 ```
 
 Or using uv, for convenience:
 ```bash
-uv run pyinstaller orlydl.spec
+uv run pyinstaller src/orlydl.spec
 ```
 
-The binary will be available in ```dist/```.
+The binary will be available in ```$PWD/dist/orlydl```.
 
 ## Contributing
 If you know Python – since it's relatively easy to learn – I encourage you to contribute. This repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks currently isn't. 
