@@ -23,6 +23,12 @@ jobs:
         with:
           python-version: 3.14
 
+      - name: Install Ubuntu-specific dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          apt install dbus python3-dev
+        working-directory: ./
+
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
