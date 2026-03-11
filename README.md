@@ -16,7 +16,7 @@ By default, it will grab your cookies using your default browser. Firefox-based 
 > ***Obviously – it should go without saying – you should support Oreilly, if you have the means. They graciously provide the books from their catalogue, for which I am certainly thankful. Thanks, Oreilly!***
 
 > [!IMPORTANT]
-> **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/08/26.**
+> **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/11/26.**
 
 ## Installing
 There are pre-release binaries in releases. Grab the one for your respective OS. Check below for a more direct approach.
