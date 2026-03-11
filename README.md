@@ -78,7 +78,7 @@ uv run pyinstaller main.spec
 The binary will be available in ```dist/```.
 
 ## Contributing
-If you know Python – since it's relatively easy to learn – I encourage you to contribute, this repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks currently isn't. 
+If you know Python – since it's relatively easy to learn – I encourage you to contribute. This repo was made with the goal of having people maintain new Pythonic code, of which the original Safaribooks currently isn't. 
 
 ### Why stay with Python?
 The answer is simple: to allow more people to help develop the tool. That was the purpose after seeing the stacked amount of PRs in Safaribooks.
