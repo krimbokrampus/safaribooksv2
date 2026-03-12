@@ -197,7 +197,6 @@ class OreillyEpubParser:
             print(file)
 
         if file["kind"] == "chapter":
-            self.total_chapters -= 1
             return self.parse_and_replace_html(
                 fetch(file["url"]).content.decode(), file
             )
