@@ -1,15 +1,20 @@
+import gc
 import itertools
+import json
+import math
 import random
 import re
+import shutil
 import sys
 import time
 from argparse import Namespace
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
 from typing import Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
+import requests
 from lxml.html import HtmlElement
 from pyquery import PyQuery
 
@@ -19,27 +24,44 @@ from constants import (
     KINDLE_CSS,
     LIMIT_FORMATTED_URL,
     OUT_DIR,
+    PBCTX_MANAGER,
     XML_CONTENTS,
 )
-from utils import ContentBuffer, escape_dirname, fetch, format_chapter
+from utils import FileData, escape_dirname, format_chapter, get_oreilly_cookies
+
+ARGS: Optional[Namespace] = None
 
 
 class OreillyEpubParser:
-    def __init__(self, iden: str, args: Namespace):
+    def __init__(self, iden: str):
         self.id: str = iden
-        self.args: Namespace = args
+        self.cache: requests.Session = requests.Session()
         self.relative_stylesheets: list = []
         self.book_info_json: dict = self.get_book_json()
+        self.title = self.book_info_json["title"]
         self.file_list: list = self.get_file_list()
-        self.file_contents: deque[ContentBuffer] = deque()
+        self.prog_bar = PBCTX_MANAGER.counter(
+            total=len(self.file_list), desc=self.title, unit="files"
+        )
+        self.file_contents: deque[FileData] = deque()
         self.is_pdf_converted: bool = False
 
-        print(f"Downloading {self.book_info_json['title']}")
+        if ARGS:
+            self.args: Namespace = ARGS
+
+        self.cache.cookies.update(
+            get_oreilly_cookies(self.args.browsers)
+            if not self.args.cookie_file
+            else json.load(self.args.cookie_file.open())
+        )
+
+        self.files_out = OUT_DIR / iden
+        self.files_out.mkdir(exist_ok=True)
 
     def get_book_json(self) -> dict:
-        return fetch(BOOK_JSON_URL.format(self.id)).json()
+        return self._fetch_result(BOOK_JSON_URL.format(self.id)).json()
 
-    def parse_and_replace_html(self, chapter_html: str, info: dict) -> bytes:
+    def _parse_and_replace_html(self, chapter_html: str, info: dict) -> bytes:
         direct_file_path_denominator = reduce(
             lambda a, y: a + "../" if y == "/" else a, info["full_path"], initial=""
         )
@@ -117,12 +139,12 @@ class OreillyEpubParser:
         return html.encode()
 
     def get_file_list(self) -> list:
-        file_count = fetch(
+        file_count = self._fetch_result(
             LIMIT_FORMATTED_URL.format(self.book_info_json["files"], 1)
         ).json()["count"]
 
         if file_count < 1000:
-            files = fetch(
+            files = self._fetch_result(
                 FILE_LIST_LIMIT_FORMATTED_URL.format(
                     self.book_info_json["identifier"], 0, file_count
                 )
@@ -132,7 +154,7 @@ class OreillyEpubParser:
         files = list(
             itertools.chain.from_iterable(
                 map(
-                    lambda i: fetch(
+                    lambda i: self._fetch_result(
                         FILE_LIST_LIMIT_FORMATTED_URL.format(
                             self.book_info_json["identifier"], i, 1000
                         )
@@ -143,69 +165,58 @@ class OreillyEpubParser:
         )
         return files
 
-    def collect_stylesheets(self) -> None:
-        res = fetch(LIMIT_FORMATTED_URL.format(self.book_info_json["spine"], 2)).json()
+    def _collect_stylesheets(self) -> None:
+        res = self._fetch_result(
+            LIMIT_FORMATTED_URL.format(self.book_info_json["spine"], 2)
+        ).json()
         results = res["results"][len(res["results"]) - 1]["url"]
         list(
             map(
                 lambda sheet: self.relative_stylesheets.append(
                     sheet.replace(self.book_info_json["files"], "")
                 ),
-                fetch(results).json()["related_assets"]["stylesheets"],
+                self._fetch_result(results).json()["related_assets"]["stylesheets"],
             )
         )
 
         if self.args.kindle:
-            self.file_contents.append(
-                ContentBuffer(
-                    "OEBPS/kindle.css",
-                    KINDLE_CSS,
-                    9,
-                )
-            )
+            (self.files_out / "OEBPS/kindle.css").write_bytes(KINDLE_CSS)
+            self.file_contents.append(FileData("OEBPS/kindle.css", 9))
             self.relative_stylesheets.append("kindle.css")
 
-    def handle_xml(self, file: dict) -> bytes:
+    def _handle_xml(self, file: dict, buf: requests.Response) -> bytes:
         type = file["media_type"]
 
         if type == "application/oebps-package+xml":
-            self.file_contents.append(
-                ContentBuffer(
-                    "META-INF/container.xml",
-                    XML_CONTENTS.format(
-                        "OEBPS/" + file["full_path"], file["media_type"]
-                    ).encode(),
-                    9,
-                )
-            )
-            return fetch(file["url"]).text.encode()
+            return buf.text.encode()
         elif type == "application/x-dtbncx+xml":
-            content = fetch(file["url"]).content
+            content = buf.content
 
             if not content.endswith(b'"UTF-8"?>'):
                 return content
 
             return b'<?xml version="1.0" encoding="UTF-8"?>' + content
 
-        return fetch(file["url"]).content
+        return buf.content
 
-    def handle_file(self, file: dict) -> bytes:
+    def _handle_file(self, file: dict) -> bytes:
         if self.args.sleep:
-            time.sleep(random.randrange(0, 3))
+            time.sleep(random.randrange(0, self.args.sleep + 1))
 
         if self.args.verbose:
             print(file)
 
+        buf = self._fetch_result(file["url"])
+        self.prog_bar.update()
+
         if file["kind"] == "chapter":
-            return self.parse_and_replace_html(
-                fetch(file["url"]).content.decode(), file
-            )
+            return self._parse_and_replace_html(buf.content.decode(), file)
         elif file["kind"] == "other_asset":
-            return self.handle_xml(file)
+            return self._handle_xml(file, buf)
 
-        return fetch(file["url"]).content
+        return buf.content
 
-    def zip_epub_contents(self, book_contents: deque[ContentBuffer]) -> None:
+    def zip_epub_contents(self) -> None:
         with ZipFile(
             (
                 (OUT_DIR if not self.args.output_dir else self.args.output_dir)
@@ -214,27 +225,33 @@ class OreillyEpubParser:
             "w",
             compression=ZIP_DEFLATED,
         ) as handle:
-            if not book_contents:  # to shut up ty
-                return
+
+            def _write_to_zip(x):
+                handle.writestr(
+                    x.file_path,
+                    fbytes := (self.files_out / x.file_path).read_bytes(),
+                    compresslevel=x.compression_level,
+                )
+                del fbytes
+                gc.collect()
 
             list(
                 map(
-                    lambda x: handle.writestr(
-                        x.file_path, x.buffer, compresslevel=x.level
-                    ),
-                    book_contents,
+                    _write_to_zip,
+                    self.file_contents,
                 )
             )
             handle.close()
 
-        print(f"Finished {self.book_info_json['title']}")
+        if not self.args.keep_contents:
+            shutil.rmtree(self.files_out)
 
-    def setup_file_contents(self) -> deque[ContentBuffer]:
-        self.collect_stylesheets()
+    def setup_file_contents(self):
+        self._collect_stylesheets()
 
         if list(filter(lambda x: "pdf2htmlEX" in x["filename"], self.file_list)):
             self.is_pdf_converted = True
-            print("EPUB is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
+            print(f"{self.title} is PDF converted. DO NOT USE CALIBRE'S EBOOK-CONVERT!")
             self.file_list = list(
                 itertools.filterfalse(
                     lambda x: re.compile("^pdf2htmlEX").match(x["filename"]),
@@ -242,34 +259,90 @@ class OreillyEpubParser:
                 )
             )
 
-        with ThreadPoolExecutor(self.args.file_threads_num) as threads:
-            futures = []
-
-            [
-                futures.append(threads.submit(self.push_buffer, file))
-                for file in self.file_list
-            ]
-            wait(futures, return_when="FIRST_EXCEPTION")
-
-            threads.shutdown()
-
-        self.file_contents.append(
-            ContentBuffer(
-                "mimetype",
-                b"application/epub+zip",
-                0,
+        # TODO: test in future, whether or not to prefer opf with ID instead of content; if present.
+        if dup_metadata := list(
+            filter(
+                lambda x: (
+                    ".opf" in x["filename_ext"] and "content" not in x["filename"]
+                ),
+                self.file_list,
             )
+        ):
+            list(map(self.file_list.remove, dup_metadata))
+
+        with ThreadPoolExecutor(
+            self.args.file_workers_num,
+        ) as threads:
+
+            def determine_chunk_size():
+                if not self.args.chunksize:
+                    return 1
+
+                return (
+                    math.ceil(len(self.file_list) / self.args.file_workers_num)
+                    if self.args.chunksize and not self.args.chunksize_amount
+                    else self.args.chunksize_amount
+                )
+
+            self.file_contents = deque(
+                threads.map(
+                    self._write_file,
+                    self.file_list,
+                    chunksize=determine_chunk_size(),
+                )
+            )
+            threads.shutdown(wait=True)
+
+        (self.files_out / (relative_mimetype_path := "mimetype")).write_bytes(
+            b"application/epub+zip"
         )
+        self.file_contents.append(FileData(relative_mimetype_path, 0))
 
-        return self.file_contents
-
-    def push_buffer(self, x: dict):
-        buf = self.handle_file(x)
-
-        self.file_contents.append(
-            ContentBuffer(
-                f"OEBPS/{x['full_path']}",
-                buf,
-                0 if "image" == x["kind"] else 9,
+        (
+            container_path := (
+                self.files_out / (relative_container_path := "META-INF/container.xml")
             )
+        ).parent.mkdir(exist_ok=True)
+        container_path.write_bytes(
+            XML_CONTENTS.format(
+                list(filter(lambda x: x["filename_ext"] == ".opf", self.file_list))[0][
+                    "filename"
+                ]
+            ).encode()
+        )
+        self.file_contents.append(FileData(relative_container_path, 0))
+        return True
+
+    def _fetch_result(self, url: str) -> requests.Response:
+        res = None
+
+        while not res:
+            try:
+                res = self.cache.get(url)
+
+                if res.status_code == 404 or res.status_code == 403:
+                    print(
+                        "Oreilly has blacklisted your IP, wait a little or swap IPs before trying again."
+                    )
+                    sys.exit()
+                elif not res.status_code == 200:
+                    raise Exception
+            except Exception:
+                res = None
+
+        return res
+
+    def _write_file(self, x: dict):
+        buf = self._handle_file(x)
+
+        file_path = self.files_out / f"OEBPS/{x['full_path']}"
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+        file_path.write_bytes(buf)
+
+        del buf
+        gc.collect()
+
+        return FileData(
+            f"OEBPS/{x['full_path']}",
+            0 if "image" == x["kind"] else 9,
         )

@@ -1,16 +1,18 @@
 import argparse
 import gc
-import json
 import sys
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor, wait
+from multiprocessing import freeze_support
 from pathlib import Path
 
 import browser_cookie3
-from constants import CACHE, OUT_DIR
-from epub import OreillyEpubParser
-from utils import get_oreilly_cookies
+import epub
+from constants import OUT_DIR
 
 if __name__ == "__main__":
+    if sys.platform == "win32":
+        freeze_support()
+
     args = argparse.ArgumentParser(
         description="Downloads EPUBs from Oreilly.", add_help=True, allow_abbrev=True
     )
@@ -56,17 +58,30 @@ if __name__ == "__main__":
         help="Maximum concurrent books to download. Recommended: 4, Max: 8-6.",
     )
     args.add_argument(
-        "-f",
-        "--file-threads-num",
-        dest="file_threads_num",
+        "-w",
+        "--file-workers-num",
+        dest="file_workers_num",
         type=int,
         default=3,
         help="Maximum concurrent number of files to download. Recommended: 3, Max: 8-6.",
     )
     args.add_argument(
+        "--file-workers-chunksize",
+        dest="chunksize",
+        nargs="?",
+        help="Whether or not to enable file batching while multithreading the file downloads.",
+    )
+    args.add_argument(
+        "--file-workers-chunksize-num",
+        dest="chunksize_amount",
+        type=int,
+        nargs="?",
+        help="Amount of files to split per file worker. By default, it will be the smallest number closest to the total number of files / --file-workers-num/-w",
+    )
+    args.add_argument(
         "-b",
         "--browser",
-        choices=browser_cookie3.BROWSERS,  # validates input + powers tab-completion
+        choices=browser_cookie3.BROWSERS,
         action="append",
         dest="browsers",
         metavar="BROWSER",
@@ -83,8 +98,9 @@ if __name__ == "__main__":
         "-s",
         "--sleep",
         dest="sleep",
-        action="store_true",
-        help="Sleeps when requesting files to prevent IP from being flagged.",
+        nargs="?",
+        type=int,
+        help="Sleeps when requesting files to prevent IP from flagged. This will be a random digit between 0 and this number for each file before being requested. Results may vary.",
     )
     args.add_argument(
         "-k",
@@ -93,55 +109,51 @@ if __name__ == "__main__":
         action="store_true",
         help="Adds CSS rules to block overflow on Kindle Devices.",
     )
+    args.add_argument(
+        "--keep-tmp-files",
+        dest="keep_contents",
+        action="store_true",
+        help="Keeps the temp files of each book's contents rather than removing them outright.",
+    )
 
     args = args.parse_args()
-    OUT_DIR.mkdir(exist_ok=True) if not args.output_dir else args.output_dir.mkdir(
+    epub.ARGS = args
+    OUT_DIR.mkdir(
         exist_ok=True
-    )
-    CACHE.cookies.update(
-        get_oreilly_cookies(args.browsers)
-        if not args.cookie_file
-        else json.load(args.cookie_file.open())
-    )
+    ) if not epub.ARGS.output_dir else epub.ARGS.output_dir.mkdir(exist_ok=True)
 
-    def parse_iden(x: str, args: argparse.Namespace):
-        parser = OreillyEpubParser(x, args)
-        book_contents = parser.setup_file_contents()
-        parser.zip_epub_contents(book_contents)
+    def parse_iden(x: str):
+        parser = epub.OreillyEpubParser(x)
+        parser.setup_file_contents()
+        parser.zip_epub_contents()
 
-        del parser, book_contents
+        del parser
         gc.collect()
 
-    if isinstance(args.iden, list) and len(args.iden) > 1:
-        total = len(args.iden)
-
-        with ThreadPoolExecutor(args.threads_num) as threads:
-            futures = []
-
-            [
-                futures.append(threads.submit(parse_iden, iden, args))
-                for iden in args.iden
-            ]
-            done = wait(futures, return_when="FIRST_EXCEPTION")
-
-            threads.shutdown()
-
+    if len(args.iden) == 1:
+        parse_iden(epub.ARGS.iden[0])
         sys.exit()
-    elif args.file_list:
-        items = list(map(lambda x: x.removeprefix("\n"), args.file_list.read_text()))
-        total = len(items)
+    elif epub.ARGS.file_list or len(args.iden) > 1:
+        with ProcessPoolExecutor(epub.ARGS.threads_num) as pool:
+            futures = list(
+                map(
+                    lambda x: pool.submit(parse_iden, x),
+                    total_books := list(
+                        map(
+                            lambda x: x.removeprefix("\n"),
+                            epub.ARGS.file_list.read_text(),
+                        )
+                    )
+                    if epub.ARGS.file_list
+                    else epub.ARGS.iden,
+                )
+            )
+            print("Total books: " + str(len(total_books)))
+            done, not_done = wait(futures, return_when="FIRST_EXCEPTION")
 
-        print("Total books: " + str(total))
+            if not_done:
+                print("An error occurred and a book failed to download.")
 
-        with ThreadPoolExecutor(args.threads_num) as threads:
-            futures = []
+            pool.shutdown()
 
-            [futures.append(threads.submit(parse_iden, iden, args)) for iden in items]
-            done = wait(futures, return_when="FIRST_EXCEPTION")
-
-            threads.shutdown()
-
-        sys.exit()
-    else:
-        parse_iden(args.iden[0], args)
         sys.exit()

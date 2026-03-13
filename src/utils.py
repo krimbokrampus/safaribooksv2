@@ -3,10 +3,7 @@ import re
 import sys
 from typing import NamedTuple
 
-from requests import Response
-
 import browser_cookie3
-from constants import CACHE
 
 
 def format_chapter(book_json, formatted_stylesheets, chapter_content) -> str:
@@ -24,23 +21,6 @@ def escape_dirname(x) -> str:
         if "win" in sys.platform
         else x.replace("/", "_")
     )
-
-
-def fetch(url: str) -> Response:
-    res = None
-
-    while not res:
-        try:
-            res = CACHE.get(url)
-
-            if res.status_code == 404 or res.status_code == 403:
-                sys.exit()
-            elif not res.status_code == 200:
-                raise Exception
-        except Exception:
-            res = None
-
-    return res
 
 
 # sourced from https://github.com/azec-pdx/safaribooks/blob/master/retrieve_cookies.py, modified to account for different browsers.
@@ -66,7 +46,6 @@ def get_oreilly_cookies(browsers) -> dict:
     return cookies
 
 
-class ContentBuffer(NamedTuple):
+class FileData(NamedTuple):
     file_path: str
-    buffer: bytes
-    level: int
+    compression_level: int

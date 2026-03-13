@@ -321,7 +321,7 @@ def _get_os_name():
     """Returns the name of the operating system: 'windows', 'osx', or 'linux'."""
     if sys.platform == "win32":
         return "windows"
-    if sys.platform == "darwin":
+    elif sys.platform == "darwin":
         return "osx"
     return "linux"
 
@@ -1669,7 +1669,9 @@ class Lynx:
     ]
 
     def __init__(self, cookie_file=None, domain_name=""):
-        self.cookie_file = _expand_paths(cookie_file or self.lynx_cookies, _get_os_name())
+        self.cookie_file = _expand_paths(
+            cookie_file or self.lynx_cookies, _get_os_name()
+        )
         self.domain_name = domain_name
 
     def load(self):
@@ -1705,7 +1707,9 @@ class W3m:
     w3m_cookies = ["~/.w3m/cookie"]
 
     def __init__(self, cookie_file=None, domain_name=""):
-        self.cookie_file = _expand_paths(cookie_file or self.w3m_cookies, _get_os_name())
+        self.cookie_file = _expand_paths(
+            cookie_file or self.w3m_cookies, _get_os_name()
+        )
         self.domain_name = domain_name
 
     def load(self):
