@@ -48,6 +48,7 @@ a.click();
     * [Using uv (recommended)](#using-uv-recommended)
     * [Using Poetry](#using-poetry)
     * [Using venv](#using-venv)
+  * [Building Binaries](#building-binaries)
   * [Updating Dependencies](#updating-dependencies)
     * [uv](#uv)
     * [Poetry](#poetry)
@@ -153,6 +154,19 @@ source .venv/bin/activate # whatever shell you have, or call the cmds directly
 pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
+
+## Building Binaries
+```bash
+pip install pyinstaller # make sure pip is in $PATH
+pyinstaller src/orlydl.py
+```
+
+Or using uv, for convenience:
+```bash
+uv run --with pyinstaller pyinstaller orlydl.spec
+```
+
+The binary will be available in ```$PWD/dist/orlydl```.
 
 ## Updating Dependencies
 
