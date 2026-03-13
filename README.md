@@ -48,7 +48,7 @@ a.click();
     * [Using uv (recommended)](#using-uv-recommended)
     * [Using Poetry](#using-poetry)
     * [Using venv](#using-venv)
-  * [Building Binaries](#building-binaries)
+  * [Building](#building)
   * [Updating Dependencies](#updating-dependencies)
     * [uv](#uv)
     * [Poetry](#poetry)
@@ -62,7 +62,7 @@ a.click();
 
 
 ## Installation
-There are binaries [here](https://github.com/krimbokrampus/safaribooksv2/releases/latest). Grab the one for your respective OS. Read below for a more direct approach.
+There are binaries [here](https://github.com/krimbokrampus/safaribooksv2/actions/workflows/build.yml). Grab the one for your respective OS. Read below for a more direct approach.
   
 ### Running
 Linux/MacOS
@@ -155,7 +155,7 @@ pip install -r requirements.txt
 python src/orlydl.py <BOOKID>
 ```
 
-## Building Binaries
+## Building
 ```bash
 pip install pyinstaller # make sure pip is in $PATH
 pyinstaller src/orlydl.py
