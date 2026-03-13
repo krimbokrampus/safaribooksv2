@@ -1,7 +1,7 @@
 import argparse
 import gc
 import sys
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, wait
 from multiprocessing import freeze_support
 from pathlib import Path
 
@@ -130,30 +130,24 @@ if __name__ == "__main__":
         del parser
         gc.collect()
 
-    if len(args.iden) == 1:
-        parse_iden(epub.ARGS.iden[0])
-        sys.exit()
-    elif epub.ARGS.file_list or len(args.iden) > 1:
-        with ProcessPoolExecutor(epub.ARGS.threads_num) as pool:
-            futures = list(
-                map(
-                    lambda x: pool.submit(parse_iden, x),
-                    total_books := list(
-                        map(
-                            lambda x: x.removeprefix("\n"),
-                            epub.ARGS.file_list.read_text(),
-                        )
+    with ThreadPoolExecutor(epub.ARGS.threads_num) as pool:
+        futures = [
+            pool.submit(parse_iden, iden)
+            for iden in (
+                list(
+                    map(
+                        lambda x: x.removeprefix("\n"),
+                        epub.ARGS.file_list.read_text(),
                     )
-                    if epub.ARGS.file_list
-                    else epub.ARGS.iden,
                 )
+                if epub.ARGS.file_list
+                else epub.ARGS.iden
             )
-            print("Total books: " + str(len(total_books)))
-            done, not_done = wait(futures, return_when="FIRST_EXCEPTION")
+        ]
+        done, not_done = wait(futures, return_when="FIRST_EXCEPTION")
 
-            if not_done:
-                print("An error occurred and a book failed to download.")
+        if not_done:
+            print("An error occurred and a book failed to download.")
 
-            pool.shutdown()
-
+        pool.shutdown()
         sys.exit()
