@@ -1,8 +1,7 @@
 import argparse
 import gc
 import sys
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, wait
-from multiprocessing import freeze_support
+from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 
 import browser_cookie3
@@ -10,9 +9,6 @@ import epub
 from constants import OUT_DIR
 
 if __name__ == "__main__":
-    if sys.platform == "win32":
-        freeze_support()
-
     args = argparse.ArgumentParser(
         description="Downloads EPUBs from Oreilly.", add_help=True, allow_abbrev=True
     )

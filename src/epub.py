@@ -9,7 +9,7 @@ import sys
 import time
 from argparse import Namespace
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import reduce
 from typing import Optional
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -24,7 +24,7 @@ from constants import (
     KINDLE_CSS,
     LIMIT_FORMATTED_URL,
     OUT_DIR,
-    PBCTX_MANAGER,
+    # PBCTX_MANAGER,
     XML_CONTENTS,
 )
 from utils import FileData, escape_dirname, format_chapter, get_oreilly_cookies
@@ -40,6 +40,9 @@ class OreillyEpubParser:
         self.book_info_json: dict = self.get_book_json()
         self.title = self.book_info_json["title"]
         self.file_list: list = self.get_file_list()
+        # self.prog_bar = PBCTX_MANAGER.counter(
+        #     total=len(self.file_list), desc=self.title, unit="files"
+        # )
         self.file_contents: deque[FileData] = deque()
         self.is_pdf_converted: bool = False
 
@@ -54,8 +57,6 @@ class OreillyEpubParser:
 
         self.files_out = OUT_DIR / iden
         self.files_out.mkdir(exist_ok=True)
-
-        print(f"Downloading: {self.title}")
 
     def get_book_json(self) -> dict:
         return self._fetch_result(BOOK_JSON_URL.format(self.id)).json()
@@ -206,6 +207,7 @@ class OreillyEpubParser:
             print(file)
 
         buf = self._fetch_result(file["url"])
+        # self.prog_bar.update()
 
         if file["kind"] == "chapter":
             return self._parse_and_replace_html(buf.content.decode(), file)
@@ -244,8 +246,6 @@ class OreillyEpubParser:
         if not self.args.keep_contents:
             shutil.rmtree(self.files_out)
 
-        print(f"Finished: {self.title}")
-
     def setup_file_contents(self):
         self._collect_stylesheets()
 
@@ -270,7 +270,7 @@ class OreillyEpubParser:
         ):
             list(map(self.file_list.remove, dup_metadata))
 
-        with ThreadPoolExecutor(
+        with ProcessPoolExecutor(
             self.args.file_workers_num,
         ) as threads:
 
