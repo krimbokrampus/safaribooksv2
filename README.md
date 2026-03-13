@@ -5,6 +5,30 @@
 > [!NOTE] 
 > PRs are welcome! If the recent Safaribooks PRs get merged, I'll defunct this repo. It won't be archived since it still works for PDF-converted EPUBs[^1], whereas [Safaribooks does not](https://github.com/lorenzodifuccia/safaribooks/issues/296).
 
+## Table of Contents
+  * [Information](#information)
+  * [Installation](#installation)
+    * [Running](#running)
+    * [Usage](#usage)
+  * [Running Directly](#running-directly)
+    * [Start](#start)
+    * [Using Python](#using-python)
+    * [Using uv (recommended)](#using-uv-recommended)
+    * [Using Poetry](#using-poetry)
+    * [Using venv](#using-venv)
+  * [Building](#building)
+  * [Updating Dependencies](#updating-dependencies)
+    * [uv](#uv)
+    * [Poetry](#poetry)
+  * [Dependencies Are Updated, I Plan on Contributing](#dependencies-are-updated-i-plan-on-contributing)
+    * [uv](#uv-1)
+    * [Poetry](#poetry-1)
+  * [Contributing](#contributing)
+    * [Why stay with Python?](#why-stay-with-python)
+  * [This Project's Licensing](#this-projects-licensing)
+  * [Third-party Licenses](#third-party-licenses)
+
+## Information
 > [!IMPORTANT] 
 > I recommend running calibre's ```ebook-convert``` on the end-result, to rid any inconsistencies. **DO NOT RUN IT ON PDF-CONVERTED EPUBS! IT WILL BREAK THEM!** Terminal will print if your EPUB is PDF-converted, so watch out for that.
 
@@ -37,29 +61,6 @@ a.click();
 
 > [!IMPORTANT]
 > **[static/out.json](static/out.json) is a metadata dump of all Oreilly Books, as of 03/11/26.**
-
-## Table of Contents
-  * [Installation](#installation)
-    * [Running](#running)
-    * [Usage](#usage)
-  * [Running Directly](#running-directly)
-    * [Start](#start)
-    * [Using Python](#using-python)
-    * [Using uv (recommended)](#using-uv-recommended)
-    * [Using Poetry](#using-poetry)
-    * [Using venv](#using-venv)
-  * [Building](#building)
-  * [Updating Dependencies](#updating-dependencies)
-    * [uv](#uv)
-    * [Poetry](#poetry)
-  * [Dependencies Are Updated, I Plan on Contributing](#dependencies-are-updated-i-plan-on-contributing)
-    * [uv](#uv-1)
-    * [Poetry](#poetry-1)
-  * [Contributing](#contributing)
-    * [Why stay with Python?](#why-stay-with-python)
-  * [This Project's Licensing](#this-projects-licensing)
-  * [Third-party Licenses](#third-party-licenses)
-
 
 ## Installation
 There are binaries [here](https://github.com/krimbokrampus/safaribooksv2/actions/workflows/build.yml). Grab the one for your respective OS. Read below for a more direct approach.
