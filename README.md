@@ -1,6 +1,6 @@
 # Safaribooks v2 Downloader
 > [!IMPORTANT] 
-> The parser is currently undergoing a refactor to be more functional. The current design was becoming increasingly unfeasible with how I wanted to design multiprocessing in parellel with the UI; random code **may** be peppered throughout from testing the design--and forgetting to remove it--prior to this conclusion. PyInstaller may be removed, due to the fact: multiple args did not work ```-i/--iden```, which would seem to be a bug. Seems most people ran the scripts directly instead of using the binaries, so I doubt this will affect you.
+> The parser is currently undergoing a refactor to be more functional. The current design was becoming increasingly unfeasible with how I wanted to design multiprocessing in parallel with the UI; random code **may** be peppered throughout from testing the design--and forgetting to remove it--prior to this conclusion. PyInstaller may be removed, due to the fact: multiple args did not work ```-i/--iden```, which would seem to be a bug. Seems most people ran the scripts directly instead of using the binaries, so I doubt this will affect you.
 
 > [!WARNING] 
 > Oreilly's v2 API seems to hate when you download multiple EPUBs, so they will effectively blacklist the requesting IP temporarily. It'll print and exit the app when this occurs.
