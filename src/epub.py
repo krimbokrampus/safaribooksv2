@@ -310,7 +310,7 @@ class OreillyEpubParser:
                 ]
             ).encode()
         )
-        self.file_contents.append(FileData(relative_container_path, 0))
+        self.file_contents.append(FileData(relative_container_path, 9))
         return True
 
     def _fetch_result(self, url: str) -> requests.Response:
